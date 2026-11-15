@@ -19,10 +19,10 @@
     "@solidus-cad/sdk": "workspace:*"
   },
   "peerDependencies": {
-    "solid-js": "^1.9.17"
+    "solid-js": "^1.9.19"
   },
   "devDependencies": {
-    "solid-js": "^1.9.17",
+    "solid-js": "^1.9.19",
     "@playwright/test": "^1.64.1",
     "@types/node": "^24.0.0",
     "@solidus-cad/kernel-wasm": "workspace:*",
