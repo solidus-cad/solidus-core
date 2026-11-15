@@ -176,8 +176,8 @@ importers:
         specifier: ^0.186.1
         version: 0.186.1
       three-mesh-bvh:
-        specifier: ^0.9.16
-        version: 0.9.16(three@0.186.1)
+        specifier: ^0.9.18
+        version: 0.9.18(three@0.186.1)
     devDependencies:
       '@solidus-cad/sketch':
         specifier: workspace:*
@@ -1055,8 +1055,8 @@ packages:
   string.prototype.codepointat@0.2.1:
     resolution: {integrity: sha512-2cBVCj6I4IOvEnjgO/hWqXjqBGsY+zwPmHl12Srk9IXSZ56Jwwmy+66XO5Iut/oQVR7t5ihYdLB0GMa4alEUcg==}
 
-  three-mesh-bvh@0.9.16:
-    resolution: {integrity: sha512-2RK+5MJOaiHJhopURn2CUkOHiF3tFloD0uZBfhebV0CKB7mgVLpWUWaDpOyhNJRDkKKe7x4rRfTHZ32GwpXdkw==}
+  three-mesh-bvh@0.9.18:
+    resolution: {integrity: sha512-S76hOBnsSG4jsuEyCu98K63klONG4NwJANabPY1LUD5l7oUgu2xtKC0IwnX/XyPzo4YZ1D7ZU+gHVA479UdQmA==}
     peerDependencies:
       three: '>= 0.159.0'
 
@@ -1965,7 +1965,7 @@ snapshots:
 
   string.prototype.codepointat@0.2.1: {}
 
-  three-mesh-bvh@0.9.16(three@0.186.1):
+  three-mesh-bvh@0.9.18(three@0.186.1):
     dependencies:
       three: 0.186.1
 
