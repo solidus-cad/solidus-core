@@ -1,0 +1,10 @@
+{
+ "bench": "Ingranaggi",
+ "g.gears": "Dentatura",
+ "spur": "Ruota cilindrica",
+ "spurHint": "Ruota a evolvente, dritta o elicoidale, dettagliata o semplificata",
+ "rack": "Cremagliera",
+ "rackHint": "Cremagliera a denti dritti, dettagliata o semplificata",
+ "bevel": "Ruota conica",
+ "bevelHint": "Ruota conica semplificata: cono al diametro primitivo m·Z"
+}

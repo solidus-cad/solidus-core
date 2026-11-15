@@ -1,0 +1,10 @@
+{
+ "bench": "Zahnräder",
+ "g.gears": "Verzahnung",
+ "spur": "Stirnrad",
+ "spurHint": "Evolventenrad, gerade oder schräg verzahnt, detailliert oder vereinfacht",
+ "rack": "Zahnstange",
+ "rackHint": "Geradverzahnte Zahnstange, detailliert oder vereinfacht",
+ "bevel": "Kegelrad",
+ "bevelHint": "Vereinfachtes Kegelrad: Kegel am Teilkreisdurchmesser m·Z"
+}

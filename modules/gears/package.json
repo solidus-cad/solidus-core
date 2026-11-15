@@ -1,0 +1,31 @@
+{
+  "name": "@solidus-cad/gears",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gears module of Solidus: involute spur gears (straight or helical), racks, simplified bevel gears.",
+  "license": "AGPL-3.0-only WITH AdditionRef-Solidus-Plugin-Exception",
+  "type": "module",
+  "main": "src/engine/index.ts",
+  "exports": {
+    ".": "./src/engine/index.ts",
+    "./extension": "./src/extension.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@solidus-cad/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.17"
+  },
+  "devDependencies": {
+    "solid-js": "^1.9.17",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.0.0",
+    "@solidus-cad/kernel-wasm": "workspace:*",
+    "@solidus-cad/sketch": "workspace:*"
+  }
+}

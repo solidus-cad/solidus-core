@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Solidus",
+  "version": "../package.json",
+  "identifier": "fr.coposoftware.solidus",
+  "build": {
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../../web/dist",
+    "beforeDevCommand": "pnpm --filter @solidus-cad/web dev",
+    "beforeBuildCommand": "pnpm --filter @solidus-cad/web build"
+  },
+  "app": {
+    "windows": [],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": false,
+    "publisher": "Copo Software",
+    "copyright": "© 2026 Copo Software",
+    "license": "AGPL-3.0-only WITH AdditionRef-Solidus-Plugin-Exception",
+    "licenseFile": "../../../LICENSE",
+    "category": "Productivity",
+    "externalBin": ["binaries/cad-kernel"],
+    "shortDescription": "Mechanical CAD",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "resources": {
+      "../../../cad.config.toml": "cad.config.default.toml",
+      "../../../LICENSE": "licenses/LICENSE.txt",
+      "../../../THIRD_PARTY_LICENSES": "licenses/THIRD_PARTY_LICENSES.txt",
+      "../../../LICENSES/AdditionRef-Solidus-Plugin-Exception.txt": "licenses/AdditionRef-Solidus-Plugin-Exception.txt",
+      "../../../LICENSES/BSD-3-Clause.txt": "licenses/BSD-3-Clause.txt",
+      "../../../LICENSES/GPL-2.0.txt": "licenses/GPL-2.0.txt",
+      "../../../LICENSES/ISC.txt": "licenses/ISC.txt",
+      "../../../LICENSES/LGPL-2.1.txt": "licenses/LGPL-2.1.txt",
+      "../../../LICENSES/LicenseRef-Liberation-Fonts.txt": "licenses/LicenseRef-Liberation-Fonts.txt",
+      "../../../LICENSES/LicenseRef-OCCT-LGPL-Exception.txt": "licenses/LicenseRef-OCCT-LGPL-Exception.txt",
+      "../../../LICENSES/MIT.txt": "licenses/MIT.txt",
+      "../../../LICENSES/MPL-2.0.txt": "licenses/MPL-2.0.txt",
+      "../../../LICENSES/Unicode-3.0.txt": "licenses/Unicode-3.0.txt",
+      "../../../LICENSES/Zlib.txt": "licenses/Zlib.txt"
+    },
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["French", "English"],
+        "displayLanguageSelector": false,
+        "installerHooks": "./windows/hooks.nsh"
+      }
+    }
+  }
+}

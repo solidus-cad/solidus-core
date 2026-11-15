@@ -1,0 +1,32 @@
+{
+  "name": "@solidus-cad/motion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Motion module of Solidus: motion studies on an assembly, timeline, collisions, video export.",
+  "license": "AGPL-3.0-only WITH AdditionRef-Solidus-Plugin-Exception",
+  "type": "module",
+  "main": "src/extension.tsx",
+  "exports": {
+    ".": "./src/extension.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@solidus-cad/sdk": "workspace:*",
+    "@solidus-cad/assembly": "workspace:*",
+    "mediabunny": "1.61.1"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.17",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "solid-js": "^1.9.17",
+    "three": "^0.186.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.0.0"
+  }
+}

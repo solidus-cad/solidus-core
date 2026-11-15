@@ -1,0 +1,42 @@
+# Solidus Plugin Exception
+
+Version 1.0, 2026-10-30.
+
+Additional permission under section 7 of the GNU Affero General Public License, version 3 ("AGPLv3").
+
+## 0. Definitions
+
+"Licensor" means Copo Software, société par actions simplifiée (47 rue Vivienne, 75002 Paris, France), and any successor in title to the copyright in the Program.
+
+"Program" means the Solidus software distributed by the Licensor under the AGPLv3 with this exception.
+
+"Sandbox" means the isolated execution environment that the Program provides for plugins: as of this version, a dedicated Web Worker that has no access to the Program's memory, modules or user interface other than through the Plugin Interface.
+
+"Plugin Interface" means, together:
+1. the message protocol between the Program and the Sandbox, as implemented in `apps/web/src/plugins/rpc.ts`, `apps/web/src/plugins/sandbox.ts` and `apps/web/src/plugins/sandbox-runtime.ts`; and
+2. the types, constants and functions published by the Licensor as the plugin API of the Program in the `@solidus-cad/sdk` package.
+
+"Plugin" means a work that (a) is loaded and executed by the Program only inside the Sandbox, (b) interacts with the Program exclusively through the Plugin Interface, and (c) contains no part of the Program other than the Plugin Interface itself.
+
+"Plugin Package" means a Plugin together with the data it ships (part families, catalogues, materials, templates, images, translations, documentation).
+
+## 1. Permission for Plugins
+
+You may create, use, modify, convey and propagate a Plugin or a Plugin Package under terms of your choice, including proprietary terms, and you may convey a Plugin or a Plugin Package together with the Program, provided that:
+
+1. the Program itself, and any modification of it, remains under the AGPLv3 with this exception; and
+2. the Plugin does not circumvent the Sandbox or reach the Program by any other means than the Plugin Interface.
+
+A Plugin is not, by reason of its use of the Plugin Interface or of its execution by the Program, a work based on the Program, and sections 5 and 6 of the AGPLv3 do not apply to it.
+
+## 2. Your designs
+
+Files created with the Program (parts, assemblies, drawings, sketches, exports in any format), and any data entered into it, are not covered by the AGPLv3 merely because they were created, opened, saved or exported by the Program, even where those files contain data structures, templates or default content supplied by the Program. They belong to their authors, who may use and license them as they wish.
+
+## 3. Modified versions
+
+If you modify the Program, you may extend this exception to your version, or remove it by deleting this notice from your version. You may not alter its terms while keeping its name. The Plugin Interface of a modified version is the Plugin Interface defined above as modified by you, provided you publish its source code under the AGPLv3 with this exception.
+
+## 4. No other effect
+
+This exception grants no rights in the trademarks of the Licensor ("Solidus", logos), which are governed by `TRADEMARK.md`. It does not limit any permission that the AGPLv3 grants by itself.

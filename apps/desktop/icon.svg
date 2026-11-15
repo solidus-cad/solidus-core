@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="113 57 65 65">
+  <rect x="113.5" y="57.5" width="64" height="64" rx="12" fill="#ffffff"/>
+<g stroke="#1c1c1c" stroke-width="1.2" stroke-linejoin="round">
+<path d="M132.75 76 L151.25 76 L158.25 70 L139.75 70 Z" fill="#2f6fd6" fill-opacity=".25"/>
+<path d="M151.25 76 L160.5 92 L167.5 86 L158.25 70 Z" fill="#2f6fd6" fill-opacity=".45"/>
+<path d="M160.5 92 L151.25 108 L158.25 102 L167.5 86 Z" fill="#2f6fd6" fill-opacity=".65"/>
+</g>
+<defs><clipPath id="iconHex"><path d="M142 76 L132.75 76 L123.5 92 L132.75 108 L142 108 Z"/></clipPath></defs>
+<path d="M142 76 L151.25 76 L160.5 92 L151.25 108 L142 108 Z" fill="#2f6fd6"/>
+<g clip-path="url(#iconHex)" stroke="#2f6fd6" stroke-width="1.6" fill="none"><line x1="139" y1="70" x2="95" y2="114"/><line x1="145" y1="70" x2="101" y2="114"/><line x1="151" y1="70" x2="107" y2="114"/><line x1="157" y1="70" x2="113" y2="114"/><line x1="163" y1="70" x2="119" y2="114"/><line x1="169" y1="70" x2="125" y2="114"/><line x1="175" y1="70" x2="131" y2="114"/><line x1="181" y1="70" x2="137" y2="114"/></g>
+<path d="M123.5 92 L132.75 76 L151.25 76 L160.5 92 L151.25 108 L132.75 108 Z" fill="none" stroke="#1c1c1c" stroke-width="1.6" stroke-linejoin="round"/>
+<line x1="142" y1="72" x2="142" y2="112" stroke="#1c1c1c" stroke-width=".8" stroke-dasharray="3 2"/>
+</svg>

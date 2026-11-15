@@ -1,0 +1,36 @@
+name: WebAssembly kernel (cad-core)
+description: >-
+  Builds cad-core to WebAssembly from the sources of the commit (packages/kernel-wasm/dist), with its C++ tests.
+  OCCT and emsdk, long to build and rarely changed, are cached as long as their scripts do not change.
+inputs:
+  root:
+    description: Folder of the cad repository (the core), relative to the workspace ("cad" in the CI of a module).
+    default: "."
+runs:
+  using: composite
+  steps:
+    - name: Build tools
+      shell: bash
+      run: command -v ninja > /dev/null || sudo apt-get install -y ninja-build
+    - name: Cache OCCT and emsdk
+      id: occt
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ inputs.root }}/third_party/emsdk
+          ${{ inputs.root }}/third_party/occt
+          ${{ inputs.root }}/build/occt-wasm/install
+        key: occt-wasm-${{ runner.os }}-${{ hashFiles(format('{0}/tools/env.sh', inputs.root), format('{0}/tools/build-occt.sh', inputs.root), format('{0}/tools/occt/**', inputs.root)) }}
+    - name: OCCT (only without cache)
+      if: steps.occt.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ inputs.root }}
+      run: bash tools/build-occt.sh wasm
+      env:
+        JOBS: "4"
+    - name: cad-core and C++ tests
+      shell: bash
+      working-directory: ${{ inputs.root }}
+      run: bash tools/build-kernel.sh wasm
+      env:
+        JOBS: "4"

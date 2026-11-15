@@ -1,0 +1,10 @@
+{
+ "bench": "Dişliler",
+ "g.gears": "Dişleme",
+ "spur": "Silindirik dişli",
+ "spurHint": "Evolvent dişli, düz veya helisel, ayrıntılı veya basitleştirilmiş",
+ "rack": "Kremayer",
+ "rackHint": "Düz dişli kremayer, ayrıntılı veya basitleştirilmiş",
+ "bevel": "Konik dişli",
+ "bevelHint": "Basitleştirilmiş konik dişli: m·Z hatve çaplı koni"
+}

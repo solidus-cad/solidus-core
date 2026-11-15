@@ -1,0 +1,39 @@
+name: Bug
+description: Report incorrect behavior
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A security vulnerability? **Do not open an issue**: see SECURITY.md.
+        Issues may be written in English or French.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: Actual result and expected result.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: If possible, attach a minimal file (without confidential data).
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options: [Browser, Desktop application, Kernel / SDK, "Module of the official builds (drawing, Motion…)", Documentation]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Operating system, browser and version. The application's bug report (Help menu) can be pasted here after review.

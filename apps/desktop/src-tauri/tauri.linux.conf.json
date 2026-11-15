@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "targets": [
+      "deb",
+      "appimage"
+    ],
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/share/doc/solidus/LICENSE": "../../../LICENSE",
+          "/usr/share/doc/solidus/THIRD_PARTY_LICENSES": "../../../THIRD_PARTY_LICENSES"
+        }
+      },
+      "appimage": {
+        "files": {
+          "/usr/share/doc/solidus/LICENSE": "../../../LICENSE",
+          "/usr/share/doc/solidus/THIRD_PARTY_LICENSES": "../../../THIRD_PARTY_LICENSES"
+        }
+      }
+    }
+  }
+}

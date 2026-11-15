@@ -1,0 +1,10 @@
+{
+ "bench": "Koła zębate",
+ "g.gears": "Uzębienie",
+ "spur": "Koło walcowe",
+ "spurHint": "Koło ewolwentowe, proste lub śrubowe, szczegółowe lub uproszczone",
+ "rack": "Listwa zębata",
+ "rackHint": "Listwa o zębach prostych, szczegółowa lub uproszczona",
+ "bevel": "Koło stożkowe",
+ "bevelHint": "Uproszczone koło stożkowe: stożek o średnicy podziałowej m·Z"
+}

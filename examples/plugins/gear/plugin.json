@@ -1,0 +1,9 @@
+{
+  "id": "com.exemple.engrenage",
+  "name": { "fr": "Exemple de plugin (engrenage)", "en": "Plugin example (gear)" },
+  "version": "1.0.0",
+  "description": { "fr": "Fonction paramétrique : roue dentée droite (module, nombre de dents, épaisseur, alésage).", "en": "Parametric feature: spur gear (module, teeth, thickness, bore)." },
+  "sdkVersion": 1,
+  "entry": "index.js",
+  "permissions": ["document.write"]
+}

@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a feature
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Issues may be written in English or French.
+  - type: textarea
+    id: need
+    attributes:
+      label: Need
+      description: What problem do you want to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed solution
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: The drawing, Motion, CAM, analysis, quoting and other official-build modules live in private repositories; requests about them are welcome here too.
+      options: [Core / kernel, Part workbench, Sheet metal workbench, Assembly workbench, Tools workbench, Gears module, SDK / plugins, Module of the official builds]
+    validations:
+      required: true

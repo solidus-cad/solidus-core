@@ -1,0 +1,32 @@
+name: Native kernel (cad-kernel)
+description: >-
+  Builds cad-core natively, with its C++ tests, and copies the cad-kernel-<triplet> kernel process into
+  apps/desktop/src-tauri/binaries (bundle.externalBin of the desktop application). Linux (gcc) or Windows (MSVC).
+  OCCT, long to build and rarely changed, is cached as long as its scripts do not change.
+runs:
+  using: composite
+  steps:
+    - name: Build tools
+      shell: bash
+      run: |
+        command -v ninja > /dev/null && exit 0
+        if [ "$RUNNER_OS" = Windows ]; then choco install -y ninja; else sudo apt-get install -y ninja-build; fi
+    - name: Cache OCCT
+      id: occt
+      uses: actions/cache@v4
+      with:
+        path: |
+          third_party/occt
+          build/occt-native/install
+        key: occt-native-${{ runner.os }}-${{ hashFiles('tools/env.sh', 'tools/build-occt.sh', 'tools/occt/**') }}
+    - name: OCCT (only without cache)
+      if: steps.occt.outputs.cache-hit != 'true'
+      shell: bash
+      run: bash tools/build-occt.sh native
+      env:
+        JOBS: "4"
+    - name: cad-core, C++ tests and cad-kernel
+      shell: bash
+      run: bash tools/build-kernel.sh native
+      env:
+        JOBS: "4"

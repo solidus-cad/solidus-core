@@ -1,0 +1,29 @@
+# =====================================================================================
+#  Solidus — desktop application settings
+# =====================================================================================
+#
+#  Location once installed: at the root of the installation folder
+#    (by default %LOCALAPPDATA%\Solidus\cad.config.toml).
+#  Linux (.deb, AppImage): ~/.config/fr.coposoftware.solidus/cad.config.toml, to be created from this template
+#    (installed in /usr/lib/Solidus/cad.config.default.toml, otherwise default values).
+#
+#  - Created at the first installation from this template (copied as is by the installer).
+#  - KEPT during updates: your changes are never overwritten.
+#    A missing key (e.g. added in a newer version) takes its default value.
+#  - Applied at the next start of the application.
+#  - To test another file without touching the installation: environment variable
+#    CAD_CONFIG=C:\path\to\my.config.toml
+#
+# =====================================================================================
+
+
+[network]
+# HTTP(S) proxy, e.g. "http://proxy.example.local:3128".
+# Empty: direct connection. (The interface uses the Windows system proxy.)
+proxy = ""
+
+
+[ui]
+# Language at first startup: "auto" (system language), "fr" or "en".
+# The choice made later in Settings takes precedence.
+language = "auto"

@@ -1,0 +1,10 @@
+{
+ "bench": "Ozubená kola",
+ "g.gears": "Ozubení",
+ "spur": "Válcové kolo",
+ "spurHint": "Evolventní kolo, přímé nebo šikmé, podrobné nebo zjednodušené",
+ "rack": "Ozubený hřeben",
+ "rackHint": "Hřeben s přímými zuby, podrobný nebo zjednodušený",
+ "bevel": "Kuželové kolo",
+ "bevelHint": "Zjednodušené kuželové kolo: kužel o roztečném průměru m·Z"
+}

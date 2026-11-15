@@ -1,0 +1,46 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+test-results/
+playwright-report/
+
+# cad-core (C++): downloaded third-party sources and builds
+third_party/
+build/
+packages/kernel-wasm/dist/
+
+# Desktop application installers (tools/desktop/release.mjs)
+release/
+
+# Secrets and local data: never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.age
+.dev-data/
+secrets.*.yaml
+!secrets.*.example.yaml
+
+# Generated promo videos (apps/web/promo)
+apps/web/promo/out/
+
+# Rust (desktop application)
+target/
+
+# Copied into each package by tools/prepack.mjs
+packages/*/LICENSE
+packages/*/LICENSE-EXCEPTION.txt
+packages/*/THIRD_PARTY_LICENSES
+packages/*/lib/
+*.tgz
+
+# Private modules: extracted here by the CI or the developer (see docs/MODULES.md), never committed to this repository
+ext/*
+!ext/README.md
+
+
+# Videos and promo recordings are not versioned
+apps/web/public/previews/*.webm

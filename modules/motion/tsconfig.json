@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "paths": {
+      "@app/*": [
+        "../../apps/web/src/*"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "test",
+    "e2e",
+    "tools"
+  ]
+}

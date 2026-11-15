@@ -1,0 +1,20 @@
+{
+  "name": "@solidus-cad/viewer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@solidus-cad/sdk": "workspace:*",
+    "three": "^0.186.1",
+    "three-mesh-bvh": "^0.9.16"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "@solidus-cad/sketch": "workspace:*"
+  }
+}

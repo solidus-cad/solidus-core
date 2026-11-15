@@ -1,0 +1,30 @@
+name: CLA
+# Contributor License Agreement (CLA.md): each contributor accepts it once, by a comment on a pull request.
+# Signatures are stored in the cla-signatures branch of this repository.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, synchronize, closed]
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  cla:
+    runs-on: ubuntu-latest
+    steps:
+      - if: (github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the Solidus CLA and I agree to it.') || github.event_name == 'pull_request_target'
+        uses: contributor-assistant/github-action@v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path-to-signatures: signatures/cla-v1.json
+          path-to-document: https://github.com/${{ github.repository }}/blob/main/CLA.md
+          branch: cla-signatures
+          allowlist: dependabot[bot]
+          custom-pr-sign-comment: I have read the Solidus CLA and I agree to it.
+          custom-notsigned-prcomment: Thank you for your contribution. Before we can merge it, please read the [Solidus Contributor License Agreement](https://github.com/${{ github.repository }}/blob/main/CLA.md) and accept it by commenting below with the sentence that follows.

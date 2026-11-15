@@ -1,0 +1,5 @@
+src-tauri/target/
+src-tauri/gen/
+
+# Noyau natif (sidecar), produit par tools/build-kernel.sh native
+src-tauri/binaries/

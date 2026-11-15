@@ -1,0 +1,23 @@
+# Headers served by Cloudflare Pages (copied to the root of dist/ by `vite build`).
+# Cross-origin isolation: required by WebAssembly threads (SharedArrayBuffer). Every resource from another domain
+# must therefore be served with CORS or `Cross-Origin-Resource-Policy: cross-origin`.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+# Fingerprinted files (assets/*) and WebAssembly binaries: cached for a year, immutable.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# MIME type only: caching of fingerprinted .wasm files comes from /assets/* (two Cache-Control headers would be concatenated).
+/*.wasm
+  Content-Type: application/wasm
+
+# Entry point: always revalidated, so that new deployments are seen immediately.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache

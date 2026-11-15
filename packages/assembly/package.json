@@ -1,0 +1,47 @@
+{
+  "name": "@solidus-cad/assembly",
+  "version": "0.1.0",
+  "description": "Assembly constraint solver, machine kinematics and .vasm archives of Solidus.",
+  "license": "AGPL-3.0-only WITH AdditionRef-Solidus-Plugin-Exception",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solidus-cad/solidus-core.git",
+    "directory": "packages/assembly"
+  },
+  "homepage": "https://github.com/solidus-cad/solidus-core#readme",
+  "bugs": "https://github.com/solidus-cad/solidus-core/issues",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "src/index.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "LICENSE-EXCEPTION.txt"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepack": "pnpm clean && pnpm build && node ../../tools/prepack.mjs dist"
+  },
+  "dependencies": {
+    "@solidus-cad/sdk": "workspace:*",
+    "fflate": "^0.8.3"
+  }
+}

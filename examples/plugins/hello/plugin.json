@@ -1,0 +1,9 @@
+{
+  "id": "com.exemple.hello",
+  "name": { "fr": "Bonjour", "en": "Hello" },
+  "version": "1.0.0",
+  "description": { "fr": "Plugin d'exemple : un onglet, deux commandes, un formulaire.", "en": "Example plugin: a tab, two commands, a form." },
+  "sdkVersion": 1,
+  "entry": "index.js",
+  "permissions": ["document.read", "document.write"]
+}
