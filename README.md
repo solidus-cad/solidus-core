@@ -6,9 +6,9 @@
 
 Each workbench is an independent module. Third-party plugins can extend the software.
 
-[![Solidus in 30 seconds (video)](docs/media/solidus-assembly.png)](docs/media/solidus-presentation.mp4)
+[![Excavator arm driven in the Motion module (video)](docs/media/excavator-arm-motion.jpg)](https://solidus-cad.com/videos/bras-pelleteuse.mp4)
 
-*Solidus in 30 seconds: [watch the video](docs/media/solidus-presentation.mp4).*
+*An excavator arm built from extrusions, assembled and driven in the Motion module: [watch the video](https://solidus-cad.com/videos/bras-pelleteuse.mp4).*
 
 The full version you can download adds proprietary modules on top of this core (see below).
 
