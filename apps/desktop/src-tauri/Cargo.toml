@@ -29,7 +29,7 @@ windows = { version = "0.62", features = ["Win32_Security_Cryptography"], option
 [target.'cfg(not(windows))'.dependencies]
 p256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"], optional = true }
 aes-gcm = { version = "0.10", optional = true }
-getrandom = { version = "0.2", optional = true }
+getrandom = { version = "0.4", optional = true }
 
 [features]
 official = ["dep:tauri-plugin-updater", "dep:sha2", "dep:base64", "dep:windows", "dep:p256", "dep:aes-gcm", "dep:getrandom"]
