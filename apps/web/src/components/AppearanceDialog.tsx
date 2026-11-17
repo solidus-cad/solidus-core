@@ -3,6 +3,7 @@ import { Dynamic } from "solid-js/web";
 import { t, type TKey } from "../i18n.ts";
 import { ACCENTS, accent, accentLocked, setAccent, setThemeChoice, SKINS, skinLocked, skinOffered, theme, themeChoice, themeProvider, type Accent, type ThemeChoice } from "../theme.ts";
 import { contributions } from "../host.ts";
+import { explainLocked } from "../license.ts";
 
 const [open, setOpen] = createSignal(false);
 
@@ -10,6 +11,11 @@ const [open, setOpen] = createSignal(false);
 const choices = (): ThemeChoice[] => ["light", "dark", ...SKINS().map((k) => k.id).filter(skinOffered)];
 const extra = (c: ThemeChoice): boolean => c !== "light" && c !== "dark";
 const skinOf = (c: ThemeChoice) => SKINS().find((k) => k.id === c);
+/** Locked theme or accent: the dialog closes and the license module offers Premium (nothing without it). */
+const offerPremium = () => {
+  setOpen(false);
+  void explainLocked("premium");
+};
 const choiceLabel = (c: ThemeChoice): string => (extra(c) ? (skinOf(c)?.label() ?? c) : t(`theme.${c}` as TKey));
 const accentLabel = (a: Accent): string => a.label?.() ?? t(`accent.${a.id}` as TKey);
 
@@ -49,9 +55,9 @@ export function AppearanceDialog() {
                       class={`theme-choice preview-${c}`}
                       classList={{ active: themeChoice() === c }}
                       aria-checked={themeChoice() === c}
-                      disabled={locked()}
+                      aria-disabled={locked() ? "true" : undefined}
                       title={locked() ? skinOf(c)?.lockHint?.() : undefined}
-                      onClick={() => setThemeChoice(c)}
+                      onClick={() => (locked() ? offerPremium() : setThemeChoice(c))}
                     >
                       <span class="theme-sample" />
                       {choiceLabel(c)}
@@ -77,8 +83,8 @@ export function AppearanceDialog() {
                     title={accentLabel(a) + (accentLocked(a.id) ? ` — ${themeProvider()?.accentLockHint?.() ?? ""}` : "")}
                     aria-label={accentLabel(a)}
                     aria-pressed={accent() === a.id}
-                    disabled={accentLocked(a.id)}
-                    onClick={() => setAccent(a.id)}
+                    aria-disabled={accentLocked(a.id) ? "true" : undefined}
+                    onClick={() => (accentLocked(a.id) ? offerPremium() : setAccent(a.id))}
                   >
                     <Show when={accentLocked(a.id)}>
                       <span class="lock" innerHTML={LOCK_ICON} />

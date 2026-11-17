@@ -56,6 +56,35 @@ export function openNewWindow(): void {
   window.open(url.href, "_blank", "popup,noopener");
 }
 
+/** Opens a web page outside the application: default browser (desktop, see links.rs), otherwise a new tab. */
+export function openExternal(url: string): void {
+  if (isDesktop) {
+    invokeDesktop("open_external", { url }).catch((e) => console.warn("lien externe :", e));
+    return;
+  }
+  window.open(url, "_blank", "noopener");
+}
+
+// Desktop: the webview opens no window of its own, and must never navigate away from the application. `window.open`
+// and the links to another origin (customer area, payment, licence texts…) go to the default browser.
+if (isDesktop && typeof window !== "undefined") {
+  const nativeOpen = window.open.bind(window);
+  window.open = (url?: string | URL, target?: string, features?: string): Window | null => {
+    if (url === undefined || String(url) === "") return null;
+    const href = new URL(String(url), location.href);
+    if (href.origin === location.origin) return nativeOpen(url, target, features);
+    openExternal(href.href);
+    return null;
+  };
+  document.addEventListener("click", (e) => {
+    const a = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>("a[href]") : null;
+    if (!a || e.defaultPrevented || a.hasAttribute("download")) return;
+    if (!/^https?:$/.test(a.protocol) || a.origin === location.origin) return;
+    e.preventDefault();
+    openExternal(a.href);
+  });
+}
+
 /** Calls a command of the desktop backend (rejects outside the desktop app). Binary `args`: raw body, parameters in headers. */
 export function invokeDesktop<T = unknown>(cmd: string, args?: Record<string, unknown> | Uint8Array, options?: { headers: Record<string, string> }): Promise<T> {
   const tauri = w.__TAURI_INTERNALS__;

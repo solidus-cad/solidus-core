@@ -7,7 +7,7 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 /// Script injected before any page script in every window (`window.__CAD_CONFIG__`).
 pub struct InitScript(pub String);
@@ -27,7 +27,31 @@ fn build(app: &AppHandle, label: &str) -> tauri::Result<WebviewWindow> {
         .initialization_script(&script)
         // HTML5 drag and drop in the page (opening files, tree view, etc.).
         .disable_drag_drop_handler()
+        // The window never leaves the application: on a remote page every command would be refused by the ACL
+        // (no native kernel, no file dialogs). Web pages go to the default browser.
+        .on_navigation(|url| {
+            if is_app_url(url) {
+                return true;
+            }
+            if url.scheme() == "https" {
+                let _ = crate::links::open_external(url.to_string());
+            }
+            false
+        })
         .build()
+}
+
+/// Pages of the application: `tauri://localhost` (Linux, macOS), `http(s)://tauri.localhost` (Windows),
+/// the Vite server in development, and blank documents.
+fn is_app_url(url: &Url) -> bool {
+    match url.scheme() {
+        "tauri" | "about" | "data" | "blob" => true,
+        "http" | "https" => {
+            let host = url.host_str().unwrap_or("");
+            host == "tauri.localhost" || (cfg!(debug_assertions) && (host == "localhost" || host == "127.0.0.1"))
+        }
+        _ => false,
+    }
 }
 
 pub fn open_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
@@ -41,4 +65,25 @@ pub async fn window_new(app: AppHandle) -> Result<(), String> {
     let window = build(&app, &label).map_err(|e| e.to_string())?;
     let _ = window.set_focus();
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn app(u: &str) -> bool {
+        is_app_url(&Url::parse(u).unwrap())
+    }
+
+    #[test]
+    fn stays_in_the_application() {
+        assert!(app("tauri://localhost/"));
+        assert!(app("http://tauri.localhost/index.html#access_token=x"));
+        assert!(app("https://tauri.localhost/"));
+        assert!(app("about:blank"));
+        assert!(!app("https://app.solidus-cad.com/"));
+        assert!(!app("https://auth.solidus-cad.com/authorize?provider=google"));
+        assert!(!app("http://tauri.localhost.example.com/"));
+        assert!(!app("file:///etc/passwd"));
+    }
 }

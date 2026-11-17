@@ -4,7 +4,9 @@
 mod config;
 mod files;
 mod kernel;
+mod links;
 mod migrate;
+mod oauth;
 mod windows;
 
 // Official builds: updates and device key (account module, private repository cloned into ext/account).
@@ -33,6 +35,8 @@ fn main() {
         files::fs_pick_save,
         files::fs_pick_dir,
         windows::window_new,
+        links::open_external,
+        oauth::oauth_loopback,
     ]);
     #[cfg(feature = "official")]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build()).invoke_handler(tauri::generate_handler![
@@ -44,6 +48,8 @@ fn main() {
         files::fs_pick_save,
         files::fs_pick_dir,
         windows::window_new,
+        links::open_external,
+        oauth::oauth_loopback,
         updates::check_updates,
         updates::pending_update,
         device::device_key,

@@ -96,6 +96,8 @@ function applyLang(l: UiLang): void {
   loadPack(l);
 }
 registerLocales(import.meta.glob<Record<string, string>>("./locales/*.json", { import: "default" }));
+// Declarative texts ({ fr, en } of the built-in workbenches, datum panel, gears): translations keyed by the English text.
+registerLocales(import.meta.glob<Record<string, string>>("./locales/tx/*.json", { import: "default" }), "en:");
 applyLang(initial);
 
 export function setLang(l: UiLang): void {
@@ -108,8 +110,8 @@ export function setLang(l: UiLang): void {
   }
 }
 
-/** Translates a text provided by a workspace or a plugin. */
-export const tx = (text: I18nText): string => text[uiLang()] ?? text[lang()];
+/** Translates a text provided by a workspace or a plugin: its own language, else locales/tx (keyed by the English text), else fr/en. */
+export const tx = (text: I18nText): string => text[uiLang()] ?? packText(`en:${text.en}`) ?? text[lang()];
 
 const dict = {
   "menu.desktopUnavailable": { fr: "Téléchargement indisponible", en: "Download unavailable" },

@@ -1,6 +1,6 @@
 {
   "name": "@solidus-cad/desktop",
-  "version": "2026.1.6",
+  "version": "2026.1.7",
   "private": true,
   "license": "AGPL-3.0-only WITH AdditionRef-Solidus-Plugin-Exception",
   "type": "module",
