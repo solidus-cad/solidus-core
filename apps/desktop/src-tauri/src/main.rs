@@ -7,6 +7,7 @@ mod kernel;
 mod links;
 mod migrate;
 mod oauth;
+mod thumbnail;
 mod windows;
 
 // Official builds: updates and device key (account module, private repository cloned into ext/account).
@@ -21,9 +22,21 @@ use tauri::{Manager, WindowEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
 fn main() {
+    // File manager thumbnails (linux/solidus.thumbnailer): extraction only, no window.
+    #[cfg(target_os = "linux")]
+    if let Some(code) = thumbnail::cli() {
+        std::process::exit(code);
+    }
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        // Position and size only: the frame follows `[ui] title_bar`, not the previous session.
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(tauri_plugin_window_state::StateFlags::all() & !tauri_plugin_window_state::StateFlags::DECORATIONS)
+                .build(),
+        )
+        // Windows 11: hovering the maximize button of the integrated title bar shows the Snap Layouts.
+        .plugin(tauri_plugin_snap_layout::init().button_id("titlebar-maximize").build())
         .manage(kernel::Kernel::default());
     #[cfg(not(feature = "official"))]
     let builder = builder.invoke_handler(tauri::generate_handler![
@@ -67,7 +80,10 @@ fn main() {
             let loaded = config::load(app.handle());
             let version = app.package_info().version.to_string();
             // Injected before any page script: the interface reads its settings synchronously.
-            app.manage(windows::InitScript(format!("window.__CAD_CONFIG__ = {};", loaded.config.frontend(&version))));
+            app.manage(windows::InitScript {
+                script: format!("window.__CAD_CONFIG__ = {};", loaded.config.frontend(&version)),
+                integrated_title_bar: loaded.config.ui.integrated_title_bar(),
+            });
             windows::open_main(app.handle())?;
             if let Some(error) = loaded.error {
                 app.dialog().message(error).title("Solidus — cad.config.toml").kind(MessageDialogKind::Warning).show(|_| {});

@@ -51,6 +51,8 @@ import {
   ungroup,
   updateComponent,
   ws,
+  hoverOccurrences,
+  viewHovers,
 } from "../workspace.ts";
 import { startSketch3D } from "../sketch3d/session.ts";
 import { checkpointMenu } from "../components/CheckpointDialog.tsx";
@@ -96,11 +98,13 @@ export function AssemblyTree() {
     <>
     <div
       class="tree-row"
-      classList={{ active: ws.selection.includes(p.c.id), suppressed: !!p.c.hidden, missing: lost(ws.activeId, p.c) }}
+      classList={{ active: ws.selection.includes(p.c.id), hovered: viewHovers(p.c.id), suppressed: !!p.c.hidden, missing: lost(ws.activeId, p.c) }}
       title={lost(ws.activeId, p.c) ? missingTitle(ws.activeId, p.c) : undefined}
       onClick={(e) => pickComponent(p.c.id, e.ctrlKey || e.metaKey || e.shiftKey)}
       onDblClick={() => editPartInContext(p.c.id)}
       onContextMenu={(e) => menu(e, p.c)}
+      onMouseEnter={() => hoverOccurrences([p.c.id])}
+      onMouseLeave={() => hoverOccurrences([])}
     >
       <span class="asm-icon" title={p.c.skeleton ? t("asm.skeleton") : p.c.fixed ? t("asm.fixed") : ""}>
         {p.c.skeleton ? "⌗" : p.c.assemblyId ? "⧉" : p.c.fixed ? "📌" : "◇"}
@@ -184,10 +188,12 @@ export function AssemblyTree() {
               return (
                 <div
                   class="tree-row sub-row"
-                  classList={{ active: ws.selection.includes(`${p.c.id}/${child.id}`), suppressed: !!child.hidden || !!p.c.hidden, missing: lost(p.c.assemblyId!, child) }}
+                  classList={{ active: ws.selection.includes(`${p.c.id}/${child.id}`), hovered: viewHovers(`${p.c.id}/${child.id}`), suppressed: !!child.hidden || !!p.c.hidden, missing: lost(p.c.assemblyId!, child) }}
                   title={lost(p.c.assemblyId!, child) ? missingTitle(p.c.assemblyId!, child) : undefined}
                   onClick={(e) => pickComponent(key(), e.ctrlKey || e.metaKey || e.shiftKey)}
                   onDblClick={() => editPartInContext(`${p.c.id}/${child.id}`)}
+                  onMouseEnter={() => hoverOccurrences([`${p.c.id}/${child.id}`])}
+                  onMouseLeave={() => hoverOccurrences([])}
                   onContextMenu={(e) => {
                     e.stopPropagation();
                     openContextMenu(e, componentMenuItems(`${p.c.id}/${child.id}`));
@@ -464,6 +470,8 @@ export function AssemblyTree() {
             <div class="asm-group">
               <div
                 class="tree-row group-row"
+                onMouseEnter={() => hoverOccurrences(a().components.filter((c) => c.group === g.id).map((c) => c.id))}
+                onMouseLeave={() => hoverOccurrences([])}
                 onContextMenu={(e) =>
                   openContextMenu(e, [
                     { label: t("tree.rename"), run: () => setRenaming(g.id) },
@@ -535,6 +543,8 @@ export function AssemblyTree() {
               class="tree-row mate-row"
               title={`${t("mate.fixed")} · ${c.name}`}
               onClick={() => setWs("selection", [c.id])}
+              onMouseEnter={() => hoverOccurrences([c.id])}
+              onMouseLeave={() => hoverOccurrences([])}
               onContextMenu={(e) => openContextMenu(e, [{ label: t("asm.unfix"), run: () => updateComponent(c.id, { fixed: false }), danger: true }])}
             >
               <span class="asm-icon">📌</span>
@@ -553,6 +563,8 @@ export function AssemblyTree() {
                 classList={{ suppressed: !!m.suppressed, error: ws.failing.includes(m.id) || !!m.unresolved }}
                 title={m.unresolved ? t("mate.unresolved") : `${refName(m.a)} ↔ ${refName(m.b)}`}
                 onDblClick={() => m.unresolved && redesignMate(m.id)}
+                onMouseEnter={() => hoverOccurrences([m.a.component, m.b.component].filter((x): x is string => !!x))}
+                onMouseLeave={() => hoverOccurrences([])}
                 onContextMenu={(e) =>
                   openContextMenu(e, [
                     ...(m.unresolved ? [{ label: t("mate.redesign"), run: () => redesignMate(m.id) }] : []),

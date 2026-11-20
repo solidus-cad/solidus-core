@@ -6,7 +6,7 @@ import { analyzeProfiles } from "@solidus-cad/sketch";
 import { t } from "../i18n.ts";
 import { theme } from "../theme.ts";
 import { unwrap } from "solid-js/store";
-import { activeDatums, attachViewer, consumedSketches, continueSketchFor, editFeature, editingFeature, editingSketch, faceColorOf, featureAtFace, parameterScope, pickDatumRef, refTarget, selectPlane, setFaceColor, setFeatureColor, setState, showFeatureDims, state, toggleRef } from "../store.ts";
+import { activeDatums, attachViewer, treeHover, consumedSketches, continueSketchFor, editFeature, editingFeature, editingSketch, faceColorOf, featureAtFace, parameterScope, pickDatumRef, refTarget, selectPlane, setFaceColor, setFeatureColor, setState, showFeatureDims, state, toggleRef } from "../store.ts";
 import { pickColor } from "./colorPick.ts";
 import { FeatureDims } from "./FeatureDims.tsx";
 import { SheetSide } from "./SheetSide.tsx";
@@ -18,7 +18,7 @@ import { Sketch3DEditor } from "../sketch3d/Sketch3DEditor.tsx";
 import { SectionPanel } from "./SectionPanel.tsx";
 import { ViewSelector } from "./ViewSelector.tsx";
 import { activeSection, sectionSettings, toggleSection } from "../section.ts";
-import { activeKind, inPlaceGhosts, leafMatrix, pickDatumForMate, mateAcceptsRef, moveComponent, pickComponent, pickMateEntity, selectableOf, ws } from "../workspace.ts";
+import { activeKind, canPasteComponents, pasteFromClipboard, inPlaceGhosts, leafMatrix, pickDatumForMate, mateAcceptsRef, moveComponent, pickComponent, pickMateEntity, selectableOf, setViewHover, ws } from "../workspace.ts";
 import { componentMenuItems } from "../assembly/componentMenu.ts";
 import { Dynamic } from "solid-js/web";
 import { contributions, moduleHidesBody } from "../host.ts";
@@ -46,6 +46,7 @@ export function Viewport() {
         else selectAsmPlane(plane);
       },
       componentMoved: (key, matrix, final) => moveComponent(key, matrix, final),
+      componentHover: (key) => setViewHover(key),
       ghostPick: (face) => {
         const ctx = ws.inPlace;
         setState("ghostFace", face && ctx ? { plane: face.plane, link: { asm: ctx.asmId, path: face.key, target: ctx.path, ref: face.ref } } : null);
@@ -81,13 +82,16 @@ export function Viewport() {
       const regions: SketchRegion[] = [];
       const scope = parameterScope();
       const datums = activeDatums();
+      // Sketch hovered in the tree: highlighted (and shown even if a feature consumed it).
+      const hover = treeHover();
+      const hovered = hover && "feature" in hover ? hover.feature : null;
       for (const f of features) {
         // 3D sketch (skeleton part): shown unless hidden.
         const s3 = f.suppressed || state.doc.display?.sketches?.[f.id] === false ? null : sketch3DOf(unwrap(state.doc), f);
-        if (s3) sketch3DSegments(s3, state.activeFeatureId === f.id ? highlighted : normal);
+        if (s3) sketch3DSegments(s3, state.activeFeatureId === f.id || hovered === f.id ? highlighted : normal);
         const info = state.sketchInfos[f.id];
         if (f.type !== "sketch" || !f.sketch || !info || f.id === editing) continue;
-        const active = state.activeFeatureId === f.id || edited.has(f.id);
+        const active = state.activeFeatureId === f.id || hovered === f.id || edited.has(f.id);
         const forced = state.doc.display?.sketches?.[f.id];
         if (forced === false && !active) continue;
         if (forced === undefined && consumed.has(f.id) && !active) continue;
@@ -173,7 +177,11 @@ export function Viewport() {
     if (!v || ws.mateDraft || ws.sketch3d || ws.frame || ws.machinePick) return;
     const rect = v.element.getBoundingClientRect();
     const hit = v.pickAssemblyAt(e.clientX - rect.left, e.clientY - rect.top);
-    if (!hit) return;
+    if (!hit) {
+      // Empty space: paste the copied occurrences.
+      if (canPasteComponents()) openContextMenu(e, [{ label: t("asm.paste"), run: () => void pasteFromClipboard() }]);
+      return;
+    }
     const items = componentMenuItems(selectableOf(hit.key));
     if (items.length) openContextMenu(e, items);
   };

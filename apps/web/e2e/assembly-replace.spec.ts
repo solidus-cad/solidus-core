@@ -48,7 +48,7 @@ test("assembly: occurrence menu, replacement by another configuration of the fam
   // Context menu of the occurrence in the tree.
   await page.locator(".tree-row:not(.mate-row)", { hasText: "Pièce1 <2>" }).click({ button: "right" });
   const menu = page.locator(".menu-popup.context");
-  for (const label of ["Masquer", "Ouvrir", "Modifier en place", "Remplacer…"]) await expect(menu.getByRole("button", { name: label, exact: true })).toBeVisible();
+  for (const label of ["Masquer", "Ouvrir seul", "Modifier en place", "Remplacer…"]) await expect(menu.getByRole("button", { name: label, exact: true })).toBeVisible();
   await menu.getByRole("button", { name: "Remplacer…" }).click();
 
   // Family: the second configuration replaces the occurrence.

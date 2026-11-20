@@ -8,6 +8,7 @@ import { firstRunPending } from "../plugins/modules.ts";
 import { closeMeasure } from "../measure.ts";
 import { closeModuleOverlays } from "../host.ts";
 import { readOnly } from "../edition.ts";
+import { ExampleCards } from "../components/ExampleCards.tsx";
 import { docFs } from "../docfiles/fs.ts";
 
 /**
@@ -220,6 +221,8 @@ export function FirstPartTour() {
           <Show when={stage() === "done"}>
             <strong class="tour-title">✓ {t("tour.done.title")}</strong>
             <p>{t("tour.done.text")}</p>
+            <p class="tour-examples-intro">{t("tour.done.examples")}</p>
+            <ExampleCards onOpened={quit} />
             <div class="tour-actions">
               <button class="btn primary" onClick={quit}>
                 {t("tour.close")}

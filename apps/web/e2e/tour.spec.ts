@@ -53,6 +53,9 @@ test("guided tour: first part", async ({ page }) => {
   await page.getByRole("button", { name: "✓ Valider" }).click();
 
   await expect(bubble).toContainText("Pièce créée");
+  // The closing card offers the example assemblies.
+  await expect(bubble.locator(".example-card")).toHaveCount(3);
+  await expect(bubble.locator(".example-card", { hasText: "Cardan double" })).toBeVisible();
   await bubble.getByRole("button", { name: "Fermer" }).click();
   await expect(bubble).toHaveCount(0);
 

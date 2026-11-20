@@ -8,6 +8,7 @@ import { activateExtensions, emitStart } from "./extensions.ts";
 import { runStartup } from "./host.ts";
 import { restorePlugins } from "./plugins/settings.ts";
 import { endSplash, startSplash } from "./splash.ts";
+import { openExampleFromUrl } from "./docfiles/examples.ts";
 
 // Splash screen (animated logo from the HTML): server gold sponsors, removed once the application is ready.
 startSplash();
@@ -21,5 +22,7 @@ await runStartup();
 initTheme();
 render(() => <App />, document.getElementById("app")!);
 endSplash();
+// Deep link ?exemple=… / ?example=…: example assembly opened once the interface is up.
+void openExampleFromUrl();
 // Catalog plugins reactivated as in the last session.
 void restorePlugins();

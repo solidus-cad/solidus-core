@@ -333,6 +333,7 @@ button:disabled {
 .menu-popup.context {
   position: fixed;
   min-width: 180px;
+  overflow-y: auto;
 }
 
 .menu-popup li.sep {
@@ -482,6 +483,99 @@ kbd {
   width: 100%;
 }
 
+/* --- Integrated title bar (desktop, components/TitleBar.tsx) ------------------------ */
+
+.menubar.titlebar {
+  height: 40px;
+  padding-right: 0;
+  user-select: none;
+}
+
+/* macOS: room for the native traffic lights */
+.menubar.tb-macos {
+  padding-left: 78px;
+}
+
+/* Document name and search in the middle of the bar */
+.menubar.titlebar .search {
+  width: 340px;
+  margin-left: 10px;
+  margin-right: auto;
+}
+
+.menubar.titlebar .bug-btn {
+  margin-right: 4px;
+}
+
+.menubar.tb-inactive .brand,
+.menubar.tb-inactive .menus,
+.menubar.tb-inactive .history-btns,
+.menubar.tb-inactive .doc-title {
+  opacity: 0.55;
+}
+
+.window-controls {
+  display: flex;
+  align-self: stretch;
+}
+
+.wc-btn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+}
+
+.wc-btn svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+/* Windows: flat buttons the height of the bar, red close */
+.wc-windows .wc-btn {
+  width: 46px;
+  border-radius: 0;
+}
+
+.wc-windows .wc-btn:hover,
+.wc-windows .wc-btn.is-hovered {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.wc-windows .wc-close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* Linux: round buttons, GNOME style */
+.wc-linux {
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 4px;
+}
+
+.wc-linux .wc-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--panel-2);
+}
+
+.wc-linux .wc-btn:hover {
+  background: var(--border);
+}
+
+.wc-linux .wc-btn svg {
+  width: 8px;
+  height: 8px;
+  stroke-width: 1.5;
+}
+
 /* --- Bug report ---------------------------------------------------------------- */
 
 .bug-btn {
@@ -623,6 +717,11 @@ kbd {
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
+}
+
+.ribbon-tabs button.soon {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .ribbon-tabs button.active {
@@ -832,8 +931,10 @@ kbd {
   color: var(--accent);
 }
 
-.tree-row:hover {
-  background: var(--panel-2);
+/* Hover (pointer on the row or on its part in the view): orange of the 3D hover; selection (.active) stays above. */
+.tree-row:hover,
+.tree-row.hovered {
+  background: color-mix(in srgb, #f2a33a 22%, var(--panel));
 }
 
 .tree-row.active {
@@ -856,6 +957,42 @@ kbd {
 
 .tree-row.error .name {
   color: var(--danger);
+}
+
+/* Sketches folded under the features that use them; a sketch picked there is given to another feature by a click. */
+.tree-row .fold {
+  display: inline-grid;
+  place-items: center;
+  width: 12px;
+  margin: 0 -4px 0 -4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.tree-row .fold.empty {
+  visibility: hidden;
+}
+
+.tree-row .fold-gap {
+  width: 12px;
+  margin: 0 -4px;
+}
+
+.tree-row.nested {
+  padding-left: 26px;
+  font-size: 0.95em;
+}
+
+.tree-row.picked {
+  outline: 1px dashed var(--accent);
+}
+
+.tree-row.assignable {
+  cursor: copy;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .tree-row.drop-before::before,
@@ -1332,6 +1469,60 @@ kbd {
 .tip-sponsor img {
   max-width: 120px;
   max-height: 28px;
+}
+.tips-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.example-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.example-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+.example-card:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.example-card:disabled {
+  cursor: progress;
+}
+.example-card[aria-busy="true"] {
+  border-color: var(--accent);
+}
+.example-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--panel-2);
+}
+.example-card span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tour-examples-intro {
+  margin-bottom: 6px;
+}
+.tips-library {
+  align-self: flex-start;
+  font-size: 12px;
 }
 .tip-nav {
   display: flex;
@@ -2388,6 +2579,112 @@ kbd {
 
 .dialog.wide {
   width: min(760px, calc(100vw - 32px));
+}
+
+/* File › Open recent: cards with thumbnails. */
+.recent-dialog .recent-grid {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  max-height: min(60vh, 560px);
+  overflow-y: auto;
+}
+
+.recent-card {
+  position: relative;
+}
+
+.recent-open {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recent-open:hover:not(:disabled),
+.recent-open:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.recent-card.disabled .recent-open {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.recent-thumb {
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  margin-bottom: 4px;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.recent-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.recent-ext {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8a94a3;
+}
+
+.recent-name {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.recent-meta {
+  overflow: hidden;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
+.recent-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--muted);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.recent-card:hover .recent-remove,
+.recent-remove:focus-visible {
+  opacity: 1;
+}
+
+.recent-remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 /* Windows of the Tools tab (module calculators): title bar, then columns; the body scrolls. */
@@ -5050,4 +5347,51 @@ kbd {
 .tree-tour {
   margin: 0 4px 6px;
   text-align: left;
+}
+
+/* Colour marks of the ribbon (components/ribbonMarks.ts): right-click on a tab or a button. */
+.ribbon [data-mark="fill"] {
+  background: color-mix(in srgb, var(--mark) 26%, transparent);
+}
+
+.ribbon [data-mark="fill"]:not(:disabled):hover,
+.ribbon [data-mark="fill"].pressed,
+.ribbon [data-mark="fill"].active {
+  background: color-mix(in srgb, var(--mark) 40%, transparent);
+}
+
+.ribbon [data-mark="line"] {
+  box-shadow: inset 0 0 0 2px var(--mark);
+}
+
+.menu-popup li.has-swatches {
+  display: flex;
+  align-items: center;
+}
+
+.menu-popup li.has-swatches > button {
+  flex: 1;
+}
+
+.menu-swatches {
+  display: flex;
+  gap: 5px;
+  padding: 0 6px;
+}
+
+.menu-popup .menu-swatch {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: var(--swatch);
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.menu-popup .menu-swatch:hover,
+.menu-popup .menu-swatch.active {
+  background: var(--swatch);
+  border-color: var(--panel);
+  box-shadow: 0 0 0 2px var(--text, currentColor);
 }

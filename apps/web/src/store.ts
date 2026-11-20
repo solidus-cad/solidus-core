@@ -1,4 +1,4 @@
-import { batch } from "solid-js";
+import { batch, createSignal } from "solid-js";
 import { emit } from "./events.ts";
 import { createStore, produce, reconcile, unwrap } from "solid-js/store";
 import {
@@ -417,7 +417,7 @@ export async function exportPlaced(format: "step" | "stl" | "obj" | "3mf", parts
     else tris.push(...placeTriangles(await kernel.exportShape("stl", id), p.matrix));
   }
   if (format === "3mf") return objectsTo3mf([...objects.values()]);
-  if (!tris.length) throw new Error("Aucune géométrie à exporter");
+  if (!tris.length) throw new Error(t("exp.empty"));
   return format === "obj" ? trianglesToObj(tris, name) : trianglesToStl(tris);
 }
 
@@ -451,8 +451,62 @@ export function toggleBodyHidden(id: string): void {
  * loft sections and guides (comma-separated identifiers).
  */
 export function consumedSketches(features: readonly { params: Record<string, string> }[]): Set<string> {
-  const ids = features.flatMap((f) => [f.params.sketch, f.params.path, f.params.profileSketch, ...(f.params.sections ?? "").split(","), ...(f.params.guides ?? "").split(",")]);
-  return new Set(ids.filter((x): x is string => !!x));
+  return new Set(features.flatMap(sketchesUsedBy));
+}
+
+/** Sketches a feature builds on (sketch, path, profile, loft sections and guides), without duplicates. */
+export function sketchesUsedBy(f: { params: Record<string, string> }): string[] {
+  const ids = [f.params.sketch, f.params.path, f.params.profileSketch, ...(f.params.sections ?? "").split(","), ...(f.params.guides ?? "").split(",")];
+  return [...new Set(ids.filter((x): x is string => !!x))];
+}
+
+/**
+ * Skeleton sketches: 3D sketches, and plane sketches whose curves another sketch takes over (`projected.kind === "sketch"`).
+ * They stay at the top level of the tree, never folded under the features that use them.
+ */
+export function skeletonSketches(features: readonly Feature[]): Set<string> {
+  const out = new Set<string>();
+  for (const f of features) {
+    if (f.type === "sketch3d") out.add(f.id);
+    for (const g of f.sketch?.geometry ?? []) if (g.projected?.kind === "sketch") out.add((g.projected as { sketch: string }).sketch);
+  }
+  return out;
+}
+
+/** Parameter of `featureId` that would receive `sketchId` (a list with room, or an empty sketch parameter first), or null. */
+function sketchSlot(sketchId: string, featureId: string): { key: string; list: boolean } | null {
+  const features = state.doc.features;
+  const si = features.findIndex((f) => f.id === sketchId);
+  const fi = features.findIndex((f) => f.id === featureId);
+  const sk = features[si];
+  const f = features[fi];
+  const def = f && definitionOf(f.type);
+  if (!sk || !f || !def || si >= fi || sketchesUsedBy(f).includes(sketchId)) return null;
+  const specs = def.params.filter(
+    (p): p is Extract<ParamSpec, { kind: "sketch" | "sketches" }> => (p.kind === "sketch" || p.kind === "sketches") && sketchFits(sk.type, p.space) && paramShown(p, f.params, def.params),
+  );
+  const room = (p: (typeof specs)[number]) => p.kind === "sketch" || !p.max || (f.params[p.key] ?? "").split(",").filter(Boolean).length < p.max;
+  const spec = specs.find((p) => !f.params[p.key] && room(p)) ?? specs.find((p) => p.kind === "sketches" && room(p)) ?? specs.find((p) => p.kind === "sketch");
+  return spec ? { key: spec.key, list: spec.kind === "sketches" } : null;
+}
+
+/** Can the feature also build on this sketch (placed above it, of an accepted kind, not already used)? */
+export function canAssignSketch(sketchId: string, featureId: string): boolean {
+  return !!sketchSlot(sketchId, featureId);
+}
+
+/**
+ * Makes a feature build on a sketch placed above it: added to a list parameter (loft sections, guides) or set in a
+ * sketch parameter (an empty one first, otherwise the main sketch is replaced). Returns false when it cannot take it.
+ */
+export function assignSketch(sketchId: string, featureId: string): boolean {
+  const slot = sketchSlot(sketchId, featureId);
+  if (!slot) return false;
+  commit((d) => {
+    const g = d.features.find((x) => x.id === featureId)!;
+    g.params[slot.key] = slot.list ? [...(g.params[slot.key] ?? "").split(",").filter(Boolean), sketchId].join(",") : sketchId;
+  });
+  return true;
 }
 
 /** Kind of a body (solid by default). */
@@ -464,10 +518,44 @@ function showPartMesh(r: RecomputeResult): void {
   const hidden = new Set((r.mesh?.bodies ?? []).map((b) => b.id).filter(bodyHidden));
   const mesh = r.mesh && hideBodies(r.mesh, hidden);
   viewer?.setMesh(mesh);
+  shownMesh = mesh ?? null;
+  shownOwners = [];
   if (!mesh) return viewer?.setFaceColors([]);
   // Filtered mesh: face indices shifted; the original feature is read back from the names (identifiers unchanged).
   const owners = mesh === r.mesh ? r.faceFeatures : Array.from({ length: mesh.faceGroups.length / 3 }, (_, k) => featureOfFaceName(mesh.names?.faces[mesh.faceGroups[k * 3 + 2]!]));
+  shownOwners = owners ?? [];
   viewer?.setFaceColors(faceColorsOf(mesh, state.doc.appearance, owners, state.doc.bodies));
+  refreshTreeHover();
+}
+
+// --- Tree node hovered: its faces highlighted in the view ---------------------------------------
+
+/** Element of the part tree under the pointer: a feature or a body. */
+export type TreeHover = { feature: string } | { body: string };
+const [treeHover, setTreeHoverSignal] = createSignal<TreeHover | null>(null);
+export { treeHover };
+/** Mesh displayed in the view and feature that created each of its faces (index k into `faceGroups`). */
+let shownMesh: NonNullable<RecomputeResult["mesh"]> | null = null;
+let shownOwners: (string | null | undefined)[] = [];
+
+/** Pointer over a node of the part tree (null: left): the faces it produced are highlighted in the view. */
+export function hoverTreeNode(h: TreeHover | null): void {
+  setTreeHoverSignal(h);
+  refreshTreeHover();
+}
+
+function refreshTreeHover(): void {
+  const h = treeHover();
+  const m = shownMesh;
+  const faces: number[] = [];
+  if (h && m && partMeshVisible) {
+    const range = "body" in h ? m.bodies?.find((b) => b.id === h.body)?.faces : undefined;
+    for (let k = 0; k < m.faceGroups.length / 3; k++) {
+      const hit = "feature" in h ? shownOwners[k] === h.feature : !!range && m.faceGroups[k * 3 + 2]! >= range[0] && m.faceGroups[k * 3 + 2]! < range[0] + range[1];
+      if (hit) faces.push(k);
+    }
+  }
+  viewer?.highlightFaces(faces);
 }
 
 /** Display settings of a body (name, colour, visibility): without recompute or history, like setDisplay. */

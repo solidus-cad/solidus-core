@@ -37,6 +37,7 @@ import { Viewport } from "./components/Viewport.tsx";
 import { ContextMenu } from "./components/ContextMenu.tsx";
 import { Dialog } from "./components/Dialog.tsx";
 import { CheckpointDialog, VersionPanel } from "./components/CheckpointDialog.tsx";
+import { RecentDialog } from "./docfiles/RecentDialog.tsx";
 import { ExportAssemblyDialog } from "./components/ExportAssemblyDialog.tsx";
 import { DocTabs } from "./components/DocTabs.tsx";
 import { panels, PanelToggle } from "./components/PanelToggle.tsx";
@@ -162,6 +163,7 @@ export function App() {
       <AppearanceDialog />
       <BomDialog />
       <CheckpointDialog />
+      <RecentDialog />
       <ExportAssemblyDialog />
       <For each={contributions("dialogs")}>{(d) => <Dynamic component={d.component} />}</For>
       <ReplaceDialog />

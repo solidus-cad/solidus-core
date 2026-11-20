@@ -19,6 +19,8 @@ type TauriWindow = {
   __CAD_CONFIG__?: RuntimeConfig;
   /** Desktop: label of the window ("main", then "w-2", "w-3"… for Window › New window). */
   __CAD_WINDOW__?: string;
+  /** Desktop with the integrated title bar (`[ui] title_bar` of cad.config.toml): operating system of the window. */
+  __CAD_TITLEBAR__?: string;
   __TAURI_INTERNALS__?: { invoke: (cmd: string, args?: Record<string, unknown> | Uint8Array, options?: { headers: Record<string, string> }) => Promise<unknown> };
 };
 
@@ -26,6 +28,16 @@ const w = globalThis as TauriWindow;
 
 export const runtimeConfig: RuntimeConfig = w.__CAD_CONFIG__ ?? {};
 export const isDesktop = runtimeConfig.desktop !== undefined;
+
+/**
+ * Integrated title bar of the desktop app (apps/desktop/src-tauri/src/windows.rs): the menu bar is the title bar of
+ * the window. "macos": native traffic lights over its left end; "windows", "linux": window buttons drawn by
+ * TitleBar.tsx. Absent in the browser and with the system title bar.
+ */
+export const titleBar: "windows" | "linux" | "macos" | undefined = (() => {
+  const os = w.__CAD_TITLEBAR__;
+  return os === "windows" || os === "linux" || os === "macos" ? os : undefined;
+})();
 
 /** URL parameter of the additional windows opened in the browser. */
 const WINDOW_PARAM = "window";

@@ -270,7 +270,33 @@ const snapshotFs: DocFs = {
   install: async (path, data) => void snapshot.set(normalize(path), new Blob([data as BlobPart])),
 };
 
-export const docFs: DocFs = isDesktop ? desktopFs : fsa.showDirectoryPicker ? folderFs : snapshotFs;
+const platformFs: DocFs = isDesktop ? desktopFs : fsa.showDirectoryPicker ? folderFs : snapshotFs;
+
+// --- Files held in memory (example assemblies) -----------------------------------------------------------
+
+/**
+ * Files read before the platform's: an example opens from here without a project folder, then its documents are
+ * detached from these paths (see docfiles/examples.ts), so nothing is ever written to them.
+ */
+const memory = new Map<string, Uint8Array>();
+const inMemory = (path: string) => [...memory.keys()].find((k) => samePath(k, path));
+
+export function putMemoryFile(path: string, data: Uint8Array): void {
+  memory.set(normalize(path), data);
+}
+
+export function dropMemoryFiles(prefix: string): void {
+  for (const k of [...memory.keys()]) if (k.startsWith(normalize(prefix))) memory.delete(k);
+}
+
+export const docFs: DocFs = {
+  ...platformFs,
+  read: (path) => {
+    const k = inMemory(path);
+    return k ? Promise.resolve(memory.get(k)!) : platformFs.read(path);
+  },
+  exists: (path) => (inMemory(path) ? Promise.resolve(true) : platformFs.exists(path)),
+};
 
 // --- File of each open document ----------------------------------------------------------------------
 

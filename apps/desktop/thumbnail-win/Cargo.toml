@@ -1,0 +1,28 @@
+[package]
+name = "solidus-thumbnail"
+version = "0.1.0"
+description = "Explorer thumbnail handler of the Solidus .vpart / .vasm files (Windows)"
+license = "AGPL-3.0-only WITH AdditionRef-Solidus-Plugin-Exception"
+edition = "2021"
+publish = false
+
+[lib]
+name = "solidus_thumbnail"
+crate-type = ["cdylib"]
+
+[target.'cfg(windows)'.dependencies]
+windows-core = "0.62"
+windows = { version = "0.62", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_Graphics_Imaging",
+  "Win32_System_Com",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_PropertiesSystem",
+] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+panic = "abort"
+strip = true

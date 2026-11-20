@@ -73,11 +73,20 @@ pub struct Network {
 #[serde(default)]
 pub struct Ui {
     pub language: String,
+    /// "integrated": menus and search in the title bar (window drawn by the interface, see windows.rs);
+    /// "system": title bar of the operating system above the menu bar.
+    pub title_bar: String,
 }
 
 impl Default for Ui {
     fn default() -> Self {
-        Self { language: "auto".into() }
+        Self { language: "auto".into(), title_bar: "integrated".into() }
+    }
+}
+
+impl Ui {
+    pub fn integrated_title_bar(&self) -> bool {
+        self.title_bar != "system"
     }
 }
 

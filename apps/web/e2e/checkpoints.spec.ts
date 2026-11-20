@@ -121,7 +121,7 @@ test("checkpoints: assembly restored with document selection", async ({ page }) 
   await checkpoint(page, "Assemblage1", "deux occurrences");
 
   await page.locator(".tree-row", { hasText: "Pièce1 <2>" }).click();
-  await page.getByRole("button", { name: "Copier" }).click();
+  await page.getByRole("button", { name: "Dupliquer" }).click();
   await expect(status).toContainText("3 occurrence(s)");
 
   const panel = await versions(page, "Assemblage1");

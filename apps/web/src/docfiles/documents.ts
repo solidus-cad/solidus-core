@@ -23,11 +23,14 @@ import { docAtPath, docFile, docFs, setDocFile, type FileFilter } from "./fs.ts"
 import { basename, dirname, extname, join, relative, safeFileName } from "./path.ts";
 import { missingRefs, setMissing, type DocReference } from "./missing.ts";
 import { announceWrite, onFileWritten } from "./sync.ts";
+import { readThumbnail, thumbnailOf, THUMBNAIL_FILE } from "./thumbnail.ts";
+import { touchRecent } from "./recent.ts";
 
 /**
  * Documents saved as separate files:
  * - `.vpart` : `document.json` (+ checkpoints) ;
  * - `.vasm`: `assembly.json` + `references.json` (parts and sub-assemblies, by path) + checkpoints;
+ * - both: `thumbnail.jpg`, image of the 3D view at the last save (thumbnail.ts).
  * Modules add their own documents (drawing `.vdrw`, CAM program `.vcam`…) with `registerModuleDoc`.
  * A reference keeps its path relative to the file that contains it, and its absolute path as a fallback.
  * If neither is found, it is flagged (missing.ts) and the user replaces it.
@@ -154,8 +157,10 @@ const pendingMissing = new Map<string, DocReference[]>();
  * Opens a document (and, recursively, those it references). Returns its identifier, null if it is unreadable.
  * Already open from this file: simply found again.
  */
-export function openFile(path: string, opts: { activate?: boolean } = {}): Promise<string | null> {
-  return opening(() => load(path, new Set()), opts);
+export async function openFile(path: string, opts: { activate?: boolean } = {}): Promise<string | null> {
+  const id = await opening(() => load(path, new Set()), opts);
+  if (id && opts.activate !== false) touchRecent(path, id, nameOf(id));
+  return id;
 }
 
 /**
@@ -208,6 +213,7 @@ async function loadBytes(data: Uint8Array, ext: string, path: string | null, vis
     const id = addPartDocument(doc);
     // Copy of an already open file (new identifier): its checkpoints remain those of the original.
     if (fresh && fileId === id) readCheckpoints(files, id);
+    readThumbnail(files, id);
     if (path) setDocFile(id, path);
     return id;
   }
@@ -221,6 +227,7 @@ async function loadBytes(data: Uint8Array, ext: string, path: string | null, vis
     const fresh = [b.assembly, ...b.parts, ...b.assemblies].map((d) => d.id!).filter((x) => !ws.entries.some((e) => e.id === x));
     const id = openAssemblyBundle(b, { activate: false });
     for (const x of fresh) if (x !== id || id === fileId) readCheckpoints(files, x);
+    readThumbnail(files, id);
     if (path) setDocFile(id, path);
     await resolveRefs(id, path, refs, visiting, (from, to) => remapAssemblyRef(id, from, to));
     return id;
@@ -286,6 +293,7 @@ export async function saveDoc(id: string, opts: { as?: boolean } = {}): Promise<
   try {
     const written: string[] = [];
     await write(id, path, new Set(), written);
+    touchRecent(path, id, nameOf(id));
     if (docFs.kind === "snapshot") setMessage(t("file.downloadHint"));
     else setMessage(written.length > 1 ? t("file.savedWithRefs").replace("{n}", String(written.length - 1)) : t("status.saved"));
     return true;
@@ -379,5 +387,7 @@ export function encodeDoc(id: string, refs: DocReference[]): Uint8Array {
     files["references.json"] = strToU8(JSON.stringify({ format: "cad.references", references: refs } satisfies ReferencesFile, null, 2));
   }
   writeCheckpoints(files, id);
-  return zipSync(files, { level: 6 });
+  const thumb = kind === "part" || kind === "assembly" ? thumbnailOf(id) : undefined;
+  // JPEG already compressed: stored as is.
+  return zipSync(thumb ? { ...files, [THUMBNAIL_FILE]: [thumb, { level: 0 }] } : files, { level: 6 });
 }

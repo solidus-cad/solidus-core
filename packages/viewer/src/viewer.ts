@@ -64,6 +64,8 @@ export interface ViewerEvents {
   componentPick?(key: string | null, additive: boolean, hit: { faceIndex: number; point: [number, number, number] } | null): void;
   /** Assembly: occurrence moved with the gizmo (`final` on release). */
   componentMoved?(key: string, matrix: number[], final: boolean): void;
+  /** Assembly: occurrence under the pointer (null: none), to highlight its node in the tree. */
+  componentHover?(key: string | null): void;
   /** In-place edit: face of another part (ghost) clicked, or null when it is deselected. */
   ghostPick?(face: GhostFace | null): void;
 }
@@ -113,6 +115,8 @@ export class Viewer {
   private freeEdges: THREE.LineSegments | null = null;
   private hoverMesh: THREE.Mesh | null = null;
   private selectMesh: THREE.Mesh | null = null;
+  /** Faces highlighted from outside the view (feature hovered in the tree). */
+  private markMesh: THREE.Mesh | null = null;
   /** Faces with their own color (color per face or per feature), laid over the body. */
   private paint: THREE.Mesh | null = null;
   private faceColors: (string | null)[] = [];
@@ -254,6 +258,7 @@ export class Viewer {
       this.events.componentMoved?.(k, m, final),
     );
     this.assembly.hitFilter = (key, p) => this.keeps(key, p);
+    this.assembly.onHover = (key) => this.events.componentHover?.(key);
     this.assembly.finishMaterial = (kind, color) => this.finishMaterial(kind, color);
 
     const el = this.renderer.domElement;
@@ -263,6 +268,7 @@ export class Viewer {
     el.addEventListener("pointerleave", () => {
       if (this.viewCube.hover(null, el)) this.requestRender();
       this.setHover(null);
+      this.assembly.setHover(null);
     });
 
 
@@ -874,6 +880,21 @@ export class Viewer {
     if (first) this.setView("iso", false);
   }
 
+  /**
+   * Faces of the current mesh highlighted like the hovered face (feature hovered in the tree); [] removes them.
+   * The indices are those of the current mesh: to be given again after each setMesh.
+   */
+  highlightFaces(faces: readonly number[]): void {
+    this.replaceOverlay(this.markMesh);
+    this.markMesh = this.faceOverlay([...faces], HOVER_COLOR, 0);
+    this.requestRender();
+  }
+
+  /** Assembly occurrences highlighted like the hovered one (node hovered in the tree); [] removes them. */
+  highlightComponents(keys: readonly string[]): void {
+    this.assembly.setMarked(keys);
+  }
+
   /** Ghost parts (in-place edit), in the coordinate system of the displayed part; null removes them. */
   setGhosts(items: GhostItem[] | null): void {
     this.ghosts.setItems(items);
@@ -1240,15 +1261,19 @@ export class Viewer {
 
   /**
    * View image (JPEG as data URL, white background, without the view cube), longest side limited to `maxSize` pixels.
-   * Rendered on demand: the WebGL buffer is only readable right after rendering.
+   * Rendered on demand: the WebGL buffer is only readable right after rendering. `grid: false`: without the ground grid
+   * (file thumbnails).
    */
-  snapshot(maxSize = 1024): string {
+  snapshot(maxSize = 1024, { grid = true }: { grid?: boolean } = {}): string {
     // Camera animation in progress: its final position.
     if (this.animation) {
       this.animation.t0 = -Infinity;
       this.stepAnimation();
     }
+    const gridShown = this.grid.visible;
+    if (!grid) this.grid.visible = false;
     this.renderFrame(false);
+    this.grid.visible = gridShown;
     const src = this.renderer.domElement;
     const k = Math.min(1, maxSize / Math.max(src.width, src.height, 1));
     const out = document.createElement("canvas");
@@ -1465,6 +1490,8 @@ export class Viewer {
     this.faceColors = [];
     this.disposeObject(this.freeEdges);
     this.freeEdges = null;
+    this.replaceOverlay(this.markMesh);
+    this.markMesh = null;
     for (const obj of [this.mesh, this.edges, this.hiddenEdges, this.hoverMesh, this.selectMesh]) {
       if (!obj) continue;
       this.root.remove(obj);

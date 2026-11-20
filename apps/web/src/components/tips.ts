@@ -30,4 +30,5 @@ export const TIPS: Tip[] = [
   { id: "dragPart", title: "tip.dragPart.title", text: "tip.dragPart.text" },
   { id: "search", title: "tip.search.title", text: "tip.search.text" },
   { id: "preview", title: "tip.preview.title", text: "tip.preview.text" },
+  { id: "marks", title: "tip.marks.title", text: "tip.marks.text" },
 ];

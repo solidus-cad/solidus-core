@@ -1,5 +1,5 @@
 import { sectionFamily, type Feature, type PartDocument } from "@solidus-cad/sdk";
-import { lang } from "../i18n.ts";
+import { tx } from "../i18n.ts";
 import { ws } from "../workspace.ts";
 
 /**
@@ -15,7 +15,7 @@ export function stepsOf(doc: PartDocument | undefined): Feature[] {
 
 export function profileLabel(family: string, size: string): string {
   const fam = sectionFamily(family);
-  return `${fam ? fam.label[lang()] : family} ${size}`;
+  return `${fam ? tx(fam.label) : family} ${size}`;
 }
 
 /** Step label: "Step 1 — Square tube 40x3 (4)". */

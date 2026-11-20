@@ -13,3 +13,4 @@ export type { GhostFace, GhostItem } from "./ghost-layer.ts";
 export { edgePoints } from "./mate-pick.ts";
 export type { AnalysisArrow, AnalysisLines, AnalysisOverlay, AnalysisParticles, AnalysisSupport, AnalysisSurface, SupportKind } from "./analysis-layer.ts";
 export { DRAFT_COLORS, scaleColor, type ShadingAnalysis } from "./shading-analysis.ts";
+export { SPLASH_MECHANISMS, mountSplashMechanism, type SplashMechanism, type SplashMechanismHandle } from "./splash-mechanisms.ts";

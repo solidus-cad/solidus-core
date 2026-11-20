@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=cad-desktop
+Exec=cad-desktop --thumbnail %i %o %s
+MimeType=application/x-solidus-part;application/x-solidus-assembly;

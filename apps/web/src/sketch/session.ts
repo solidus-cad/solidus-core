@@ -33,7 +33,7 @@ import {
   type ProfileAnalysis,
 } from "@solidus-cad/sketch";
 import { datumFrame, editingSketch, parameterScope, recompute, state, updateSketch } from "../store.ts";
-import { t } from "../i18n.ts";
+import { t, type TKey } from "../i18n.ts";
 import { encodeLen, isInch, lenExpr, MM_PER_INCH } from "../units.ts";
 import { textContours, type TextStyle } from "./text.ts";
 
@@ -521,18 +521,18 @@ const ACCEPTS: Record<ConstraintCommand, string[]> = {
   fix: ["point"],
 };
 
-const HINTS: Record<ConstraintCommand, string> = {
-  coincident: "Coïncidence : cliquez sur deux points, ou un point et une courbe.",
-  horizontal: "Horizontale : cliquez sur les lignes.",
-  vertical: "Verticale : cliquez sur les lignes.",
-  parallel: "Parallèle : cliquez sur deux lignes.",
-  perpendicular: "Perpendiculaire : cliquez sur deux lignes.",
-  tangent: "Tangence : cliquez sur une ligne ou un cercle, et un cercle ou un arc.",
-  equal: "Égalité : cliquez sur deux lignes, ou deux cercles ou arcs.",
-  concentric: "Concentrique : cliquez sur deux cercles ou arcs.",
-  midpoint: "Milieu : cliquez sur un point et une ligne.",
-  symmetric: "Symétrie : cliquez sur deux points et une ligne (l'axe).",
-  fix: "Fixe : cliquez sur les points.",
+const HINTS: Record<ConstraintCommand, TKey> = {
+  coincident: "sk.h.coincident",
+  horizontal: "sk.h.horizontal",
+  vertical: "sk.h.vertical",
+  parallel: "sk.h.parallel",
+  perpendicular: "sk.h.perpendicular",
+  tangent: "sk.h.tangent",
+  equal: "sk.h.equal",
+  concentric: "sk.h.concentric",
+  midpoint: "sk.h.midpoint",
+  symmetric: "sk.h.symmetric",
+  fix: "sk.h.fix",
 };
 
 /**
@@ -551,20 +551,20 @@ export function constrain(cmd: ConstraintCommand): void {
   }
   setTool("constraint", null, cmd);
   setSession("selection", sel);
-  message(HINTS[cmd]);
+  message(t(HINTS[cmd]));
 }
 
 /** Element clicked with the constraint tool: the constraint is applied once enough elements are picked, and the tool stays active. */
 export function constraintPick(id: string | null): void {
   const cmd = session.constraintCmd;
   if (!cmd) return;
-  if (!id) return void setSession({ selection: [], message: HINTS[cmd] });
-  if (!ACCEPTS[cmd].includes(kindOf(id) ?? "")) return message(HINTS[cmd]);
+  if (!id) return void setSession({ selection: [], message: t(HINTS[cmd]) });
+  if (!ACCEPTS[cmd].includes(kindOf(id) ?? "")) return message(t(HINTS[cmd]));
   if (session.selection.includes(id)) return void setSession("selection", (s) => s.filter((x) => x !== id));
   const sel = [...session.selection, id];
   if (sel.length < ARITY[cmd]) return void setSession("selection", sel);
   const err = applyConstraint(cmd, sel);
-  setSession({ selection: [], message: err ?? HINTS[cmd] });
+  setSession({ selection: [], message: err ?? t(HINTS[cmd]) });
 }
 
 /** Applies the constraint to the elements; returns the error message if they do not suit it. */
@@ -589,34 +589,34 @@ function applyConstraint(cmd: ConstraintCommand, ids: string[]): string | null {
         return null;
       }
       if (points.length === 1 && curves.length === 1) return add({ id: newId(), type: "pointOnCurve", point: points[0]!, curve: curves[0]! });
-      return fail("Coïncidence : sélectionnez deux points, ou un point et une courbe.");
+      return fail(t("sk.e.coincident"));
     case "horizontal":
     case "vertical":
-      if (lines.length === 0) return fail("Sélectionnez une ou plusieurs lignes.");
+      if (lines.length === 0) return fail(t("sk.e.lines"));
       return add(...lines.map((a) => ({ id: newId(), type: cmd, a }) as SkConstraint));
     case "parallel":
     case "perpendicular":
-      if (lines.length !== 2) return fail("Sélectionnez deux lignes.");
+      if (lines.length !== 2) return fail(t("sk.e.twoLines"));
       return add({ id: newId(), type: cmd, a: lines[0]!, b: lines[1]! });
     case "equal":
       if (lines.length >= 2) return add(...lines.slice(1).map((b) => ({ id: newId(), type: "equal", a: lines[0]!, b }) as SkConstraint));
       if (roundCurves.length >= 2)
         return add(...roundCurves.slice(1).map((b) => ({ id: newId(), type: "equal", a: roundCurves[0]!, b }) as SkConstraint));
-      return fail("Égalité : sélectionnez des lignes, ou des cercles et arcs.");
+      return fail(t("sk.e.equal"));
     case "tangent":
-      if (curves.length !== 2 || roundCurves.length === 0) return fail("Tangence : sélectionnez une ligne ou un cercle, et un cercle ou un arc.");
+      if (curves.length !== 2 || roundCurves.length === 0) return fail(t("sk.e.tangent"));
       return add({ id: newId(), type: "tangent", a: curves[0]!, b: curves[1]! });
     case "concentric":
-      if (roundCurves.length !== 2) return fail("Sélectionnez deux cercles ou arcs.");
+      if (roundCurves.length !== 2) return fail(t("sk.e.twoRound"));
       return add({ id: newId(), type: "concentric", a: roundCurves[0]!, b: roundCurves[1]! });
     case "midpoint":
-      if (points.length !== 1 || lines.length !== 1) return fail("Milieu : sélectionnez un point et une ligne.");
+      if (points.length !== 1 || lines.length !== 1) return fail(t("sk.e.midpoint"));
       return add({ id: newId(), type: "midpoint", point: points[0]!, curve: lines[0]! });
     case "symmetric":
-      if (points.length !== 2 || lines.length !== 1) return fail("Symétrie : sélectionnez deux points et une ligne (l'axe).");
+      if (points.length !== 2 || lines.length !== 1) return fail(t("sk.e.symmetric"));
       return add({ id: newId(), type: "symmetric", a: points[0]!, b: points[1]!, axis: lines[0]! });
     case "fix":
-      if (points.length === 0) return fail("Sélectionnez un ou plusieurs points.");
+      if (points.length === 0) return fail(t("sk.e.points"));
       return add(...points.filter((p) => p !== SKETCH_ORIGIN).map((p) => ({ id: newId(), type: "fix", point: p }) as SkConstraint));
   }
 }
@@ -634,7 +634,7 @@ export function addDimension(type: DimensionKind, a: string, b?: string): void {
   if (!sk) return;
   const d: SkDimension = { id: newId(), type, a, b, value: "0", driving: true };
   const v = measureDimension(d, unwrap(sk).geometry);
-  if (v === null) return message("Cote impossible sur cette sélection.");
+  if (v === null) return message(t("sk.e.dimImpossible"));
   d.value = round(v, type);
   sketchOp((s) => void s.dimensions.push(d));
   if (session.conflicting.length || session.redundant.length) {
@@ -644,7 +644,7 @@ export function addDimension(type: DimensionKind, a: string, b?: string): void {
       if (x) x.driving = false;
     }, { recompute: false });
     solveNow();
-    message("Esquisse déjà contrainte : la cote est ajoutée en mesure (pilotée).");
+    message(t("sk.e.overDim"));
   } else {
     setSession("editingDim", d.id);
   }
@@ -684,7 +684,7 @@ export function dimensionSelection(kind?: DimensionTool): void {
     return message(t(kind === "angle" ? "sk.dimAngleHint" : "sk.dimHint"));
   }
   if (!dimensionFor(session.selection, kind))
-    message(kind === "angle" ? t("sk.dimAngleHint") : "Cote : sélectionnez une ligne, un cercle, deux points, un point et une ligne, ou deux lignes.");
+    message(kind === "angle" ? t("sk.dimAngleHint") : t("sk.e.dimSel"));
 }
 
 export function setDimensionValue(id: string, value: string): void {
@@ -716,7 +716,7 @@ export function mirrorSelection(): void {
   const sel = [...session.selection];
   const axis = [...sel].reverse().find((id) => kindOf(id) === "line");
   const items = sel.filter((id) => id !== axis && ["line", "circle", "arc", "point"].includes(kindOf(id) ?? ""));
-  if (!axis || items.length === 0) return message("Symétrie : sélectionnez les éléments, puis la ligne d'axe en dernier.");
+  if (!axis || items.length === 0) return message(t("sk.e.mirror"));
   const sk = editingSketch()!;
   const axisLine = axis === SKETCH_AXIS_H ? { p1: SKETCH_ORIGIN, p2: "O:H" } : axis === SKETCH_AXIS_V ? { p1: SKETCH_ORIGIN, p2: "O:V" } : (geo(axis) as { p1: string; p2: string });
   const ref = (id: string) => (id === "O:H" ? { x: 1, y: 0 } : id === "O:V" ? { x: 0, y: 1 } : pointPos(id)!);
@@ -875,7 +875,7 @@ export function closeContours(): void {
 export function trimAt(curveId: string, at: { x: number; y: number }): void {
   const sk = editingSketch();
   if (!sk) return;
-  applyResult(trimSketch(unwrap(sk), curveId, at, newId), "Ajuster : cliquez sur une ligne, un cercle ou un arc.");
+  applyResult(trimSketch(unwrap(sk), curveId, at, newId), t("sk.e.trim"));
 }
 
 /** Fillet on the clicked corner; the proposed radius can be edited immediately (dimension field open). */
@@ -893,7 +893,7 @@ export function filletAt(pointId: string): void {
   // Proposed radius: 20 % of the shorter line, rounded to 0.1 mm (or 0.01 in).
   const r = !short ? 0 : isInch() ? Math.max(Math.round((short / MM_PER_INCH) * 100) / 100, 0.01) * MM_PER_INCH : Math.max(Math.round(short * 10) / 10, 0.1);
   const before = new Set(unwrap(sk).dimensions.map((d) => d.id));
-  if (applyResult(lines.length === 2 ? filletCorner(unwrap(sk), pointId, r, newId) : null, "Congé : cliquez sur le coin commun à deux lignes.")) {
+  if (applyResult(lines.length === 2 ? filletCorner(unwrap(sk), pointId, r, newId) : null, t("sk.e.fillet"))) {
     const dim = editingSketch()!.dimensions.find((d) => !before.has(d.id));
     if (dim) {
       if (isInch()) updateSketch((s) => void (s.dimensions.find((x) => x.id === dim.id)!.value = lenExpr(r)), { recompute: false });
@@ -906,8 +906,8 @@ export function offsetSelection(distance: number): void {
   const sk = editingSketch();
   if (!sk) return;
   const ids = session.selection.filter((id) => ["line", "circle", "arc"].includes(geo(id)?.type ?? ""));
-  if (ids.length === 0) return message("Décalage : sélectionnez des lignes, cercles ou arcs.");
-  if (applyResult(offsetCurves(unwrap(sk), ids, distance, newId), "Décalage impossible avec cette distance.")) {
+  if (ids.length === 0) return message(t("sk.e.offsetSel"));
+  if (applyResult(offsetCurves(unwrap(sk), ids, distance, newId), t("sk.e.offsetFail"))) {
     setSession({ selection: [], offsetOpen: false });
   }
 }

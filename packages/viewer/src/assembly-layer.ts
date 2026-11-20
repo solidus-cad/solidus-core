@@ -93,11 +93,15 @@ export class AssemblyLayer {
   private readonly gizmo: TransformControls;
   private gizmoTarget: string | null = null;
   private hovered: string | null = null;
+  /** Occurrences highlighted from outside the view (pointer over their node in the tree). */
+  private marked = new Set<string>();
   /** Occurrences to draw alone (excluded from the section: their section planes differ from those of the batch). */
   private solo: ((key: string) => boolean) | null = null;
   private readonly raycaster = new THREE.Raycaster();
   /** Hit filter (section: removed material cannot be picked). */
   hitFilter: ((key: string, point: THREE.Vector3) => boolean) | null = null;
+  /** Occurrence under the pointer changed (null: none). */
+  onHover: ((key: string | null) => void) | null = null;
   /** Material of a finish (provided by the view: shared reflections and patterns); absent: color only. */
   finishMaterial: ((finish: Finish, color: THREE.ColorRepresentation) => THREE.MeshStandardMaterial) | null = null;
 
@@ -174,9 +178,7 @@ export class AssemblyLayer {
       b.material.opacity = b.opacity;
       b.material.depthWrite = b.opacity >= 1;
       this.repaint(b, it.faceColors);
-      const emissive = it.selected ? SELECT : this.hovered === it.key ? HOVER : 0x000000;
-      b.material.emissive.setHex(emissive);
-      b.material.emissiveIntensity = it.selected ? 0.45 : 0.3;
+      this.applyEmissive(it.key, b);
       this.updateAlone(it.key, b);
       // Position, color or visibility may have changed: the batch is copied.
       if (b.source) this.dirty.add(b.source);
@@ -242,18 +244,47 @@ export class AssemblyLayer {
   setHover(key: string | null): void {
     if (key === this.hovered) return;
     const prevKey = this.hovered;
-    const prev = prevKey ? this.items.get(prevKey) : undefined;
-    if (prev && prev.material.emissive.getHex() === HOVER) prev.material.emissive.setHex(0);
     this.hovered = key;
-    if (prev) this.updateAlone(prevKey!, prev);
-    const b = key ? this.items.get(key) : undefined;
-    if (b && b.material.emissive.getHex() === 0) {
-      b.material.emissive.setHex(HOVER);
-      b.material.emissiveIntensity = 0.3;
+    this.onHover?.(key);
+    for (const k of [prevKey, key]) {
+      const b = k ? this.items.get(k) : undefined;
+      if (!b) continue;
+      this.applyEmissive(k!, b);
+      this.updateAlone(k!, b);
     }
-    if (b) this.updateAlone(key!, b);
     this.flush();
     this.requestRender();
+  }
+
+  /** Occurrences highlighted like the hovered one, without the pointer being over them (tree node hovered). */
+  setMarked(keys: readonly string[]): void {
+    const next = new Set(keys);
+    if (next.size === this.marked.size && [...next].every((k) => this.marked.has(k))) return;
+    const touched = new Set([...this.marked, ...next]);
+    this.marked = next;
+    for (const k of touched) {
+      const b = this.items.get(k);
+      if (!b) continue;
+      this.applyEmissive(k, b);
+      this.updateAlone(k, b);
+    }
+    this.flush();
+    this.requestRender();
+  }
+
+  /**
+   * Glow of an occurrence: selection first (stronger), then hover (pointer or tree). Applied to the body and to its
+   * painted faces, which have their own material and would otherwise keep their color.
+   */
+  private applyEmissive(key: string, b: Built): void {
+    const lit = this.hovered === key || this.marked.has(key);
+    const hex = b.selected ? SELECT : lit ? HOVER : 0x000000;
+    const intensity = b.selected ? 0.6 : 0.35;
+    const paint = b.paint?.material as THREE.MeshStandardMaterial | undefined;
+    for (const m of paint ? [b.material, paint] : [b.material]) {
+      m.emissive.setHex(hex);
+      m.emissiveIntensity = intensity;
+    }
   }
 
   /** Occurrences to draw outside the batch (excluded from the section); called before each render. */
@@ -300,7 +331,7 @@ export class AssemblyLayer {
 
   /** Switches the occurrence between its batch and its own drawing; the affected batch is marked for rebuild. */
   private updateAlone(key: string, b: Built): void {
-    const alone = !!b.mesh && (b.selected || b.opacity < 1 || this.hovered === key || this.gizmoTarget === key || !!this.solo?.(key));
+    const alone = !!b.mesh && (b.selected || b.opacity < 1 || this.hovered === key || this.marked.has(key) || this.gizmoTarget === key || !!this.solo?.(key));
     if (alone === b.alone) return;
     b.alone = alone;
     b.material.visible = alone;
@@ -470,5 +501,6 @@ export class AssemblyLayer {
     b.paint = b.mesh && b.source && key ? paintMesh(b.mesh.geometry, b.source, colors!) : null;
     if (b.paint) b.group.add(b.paint);
     b.paintKey = key;
+    if (b.paint) this.applyEmissive(b.group.userData.asmKey as string, b);
   }
 }

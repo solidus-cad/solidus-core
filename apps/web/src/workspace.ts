@@ -47,7 +47,7 @@ import { saveActive, saveBlob } from "./files.ts";
 import { saveDoc } from "./docfiles/documents.ts";
 import { forgetDocFile } from "./docfiles/fs.ts";
 import { clearMissing } from "./docfiles/missing.ts";
-import { ask } from "./components/Dialog.tsx";
+import { ask, showDialog } from "./components/Dialog.tsx";
 import { docKind, docKinds } from "./host.ts";
 import { packHistory, unpackHistory, whenIdle, type History } from "./history.ts";
 import {
@@ -586,6 +586,29 @@ export function keepCamMeshes(keys: string[]): void {
 }
 
 let shownCount = 0;
+/** Keys of the occurrences displayed (leaves), and tree paths hovered: highlighted in the view. */
+let shownKeys: string[] = [];
+let hoveredPaths: string[] = [];
+
+/** Pointer over a node of the assembly tree (occurrence, group, constraint): its parts glow in the view; [] when left. */
+export function hoverOccurrences(paths: readonly string[]): void {
+  hoveredPaths = [...paths];
+  refreshOccurrenceHover();
+}
+
+/** Occurrence under the pointer in the view (leaf key), null: none: its node is highlighted in the tree. */
+export const [viewHover, setViewHover] = createSignal<string | null>(null);
+
+/** True when the occurrence hovered in the view is `path` or lies under it (sub-assembly). */
+export const viewHovers = (path: string): boolean => {
+  const k = viewHover();
+  return !!k && (k === path || k.startsWith(`${path}/`));
+};
+
+function refreshOccurrenceHover(): void {
+  const keys = hoveredPaths.length ? shownKeys.filter((k) => hoveredPaths.some((p) => k === p || k.startsWith(`${p}/`))) : [];
+  getViewer()?.highlightComponents(keys);
+}
 
 /** Color forced on some parts (Measure workbench: parts without a material); undefined: the part's color. */
 let colorOverride: ((partId: string) => string | undefined) | null = null;
@@ -634,6 +657,8 @@ function pushItems(): void {
     });
   }
   v.setAssembly(items);
+  shownKeys = items.map((i) => i.key);
+  refreshOccurrenceHover();
   // New component displayed: the view is reframed so it is visible.
   if (items.length > shownCount) v.fit();
   shownCount = items.length;
@@ -1302,6 +1327,126 @@ export function copySelection(): void {
   });
   setWs("selection", created);
   pushItems();
+}
+
+// --- Clipboard of occurrences (Ctrl+C / Ctrl+X / Ctrl+V, same assembly or another tab) -----
+
+/**
+ * Copied occurrences: top-level components and the constraints linking them to each other
+ * (constraints to the rest of the assembly or to its reference planes are not carried over).
+ * In memory only: the part and subassembly documents stay referenced by their identifier.
+ */
+interface AsmClipboard {
+  from: string;
+  components: AssemblyComponent[];
+  mates: Mate[];
+  /** Cut: the occurrences were removed from their assembly, the first paste keeps their position. */
+  cut: boolean;
+  /** Pastes already made per assembly (successive offsets). */
+  pasted: Record<string, number>;
+}
+
+const [asmClip, setAsmClip] = createSignal<AsmClipboard | null>(null);
+
+/** True if occurrences are waiting in the clipboard. */
+export const canPasteComponents = (): boolean => !!asmClip()?.components.length;
+
+/** Top-level occurrences of the selection (a part of a subassembly is taken with its occurrence). */
+function selectedTop(a: AssemblyDocument): AssemblyComponent[] {
+  const ids = new Set(ws.selection.map((k) => k.split("/")[0]!));
+  return a.components.filter((c) => ids.has(c.id));
+}
+
+/** Copies the selected occurrences into the clipboard. */
+export function copyToClipboard(): void {
+  const a = ws.asm;
+  if (!a) return;
+  const comps = selectedTop(a);
+  if (!comps.length) return;
+  const ids = new Set(comps.map((c) => c.id));
+  const inside = (r: MateRef) => ids.has(r.component.split("/")[0]!);
+  const mates = a.mates.filter((m) => inside(m.a) && inside(m.b)).map((m) => {
+    const { drive: _drive, ...rest } = clone(m);
+    return rest as Mate;
+  });
+  setAsmClip({ from: ws.activeId, components: comps.map((c) => clone(c)), mates, cut: false, pasted: {} });
+}
+
+/** Cuts the selected occurrences: copied, then removed with their constraints. */
+export function cutToClipboard(): void {
+  if (!ws.asm || editBlocked()) return;
+  copyToClipboard();
+  const clip = asmClip();
+  if (!clip) return;
+  setAsmClip({ ...clip, cut: true });
+  setWs("selection", clip.components.map((c) => c.id));
+  deleteSelection();
+}
+
+/** Pastes the clipboard occurrences into the active assembly; returns the created identifiers. */
+export function pasteFromClipboard(): string[] {
+  const clip = asmClip();
+  const target = ws.asm;
+  if (!clip || !target || editBlocked()) return [];
+  const self = ws.activeId;
+  // Documents closed since the copy, and subassemblies that would contain the target assembly (loop).
+  let loops = 0;
+  const comps = clip.components.filter((c) => {
+    if (c.assemblyId) {
+      if (!assemblyDoc(c.assemblyId)) return false;
+      if (containsAssembly(c.assemblyId, self, assemblyDoc)) {
+        loops++;
+        return false;
+      }
+      return true;
+    }
+    return !!partDoc(c.partId);
+  });
+  if (loops) showDialog(t("asm.paste"), t("asm.pasteLoop"));
+  if (!comps.length) return [];
+  // Offset of 20 mm per paste, except the first paste after a cut or into another assembly.
+  const done = clip.pasted[self] ?? 0;
+  const n = done + (clip.cut || clip.from !== self ? 0 : 1);
+  const map = new Map<string, string>();
+  const created: string[] = [];
+  commitAsm((a) => {
+    const groups = new Set(a.groups.map((g) => g.id));
+    let base = isFirstBody(a);
+    for (const src of comps) {
+      const c = clone(src);
+      const id = newId();
+      map.set(src.id, id);
+      created.push(id);
+      c.id = id;
+      c.matrix = [...c.matrix];
+      c.matrix[12] = c.matrix[12]! + 20 * n;
+      c.matrix[13] = c.matrix[13]! + 20 * n;
+      // Name kept if free (cut, other assembly), otherwise renumbered like an insertion.
+      if (a.components.some((x) => x.name === c.name)) {
+        c.name = c.assemblyId ? `${assemblyDoc(c.assemblyId)?.name ?? "?"} <${a.components.filter((x) => x.assemblyId === c.assemblyId).length + 1}>` : occurrenceName(a, c.partId);
+      }
+      if (c.group && !groups.has(c.group)) delete c.group;
+      // Empty assembly: the first pasted body becomes its fixed base, as with an insertion.
+      if (c.skeleton) c.fixed = true;
+      else if (base) {
+        c.fixed = true;
+        base = false;
+      } else if (!clip.cut || clip.from !== self) c.fixed = false;
+      a.components.push(c);
+    }
+    const remap = (r: MateRef): MateRef => {
+      const [top, ...rest] = r.component.split("/");
+      return { ...r, component: [map.get(top!)!, ...rest].join("/") };
+    };
+    for (const m of clip.mates) {
+      if (!map.has(m.a.component.split("/")[0]!) || !map.has(m.b.component.split("/")[0]!)) continue;
+      a.mates.push({ ...clone(m), id: newId(), a: remap(m.a), b: remap(m.b) });
+    }
+  });
+  setAsmClip({ ...clip, pasted: { ...clip.pasted, [self]: done + 1 } });
+  setWs("selection", created);
+  pushItems();
+  return created;
 }
 
 export function deleteSelection(): void {

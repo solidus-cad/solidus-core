@@ -9,16 +9,26 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use tauri::{AppHandle, Manager, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
-/// Script injected before any page script in every window (`window.__CAD_CONFIG__`).
-pub struct InitScript(pub String);
+/// Script injected before any page script in every window (`window.__CAD_CONFIG__`), and title bar choice
+/// (`[ui] title_bar` of cad.config.toml).
+pub struct InitScript {
+    pub script: String,
+    pub integrated_title_bar: bool,
+}
 
 /// Number of the next additional window (`w-2`, `w-3`…).
 static NEXT: AtomicU32 = AtomicU32::new(2);
 
 fn build(app: &AppHandle, label: &str) -> tauri::Result<WebviewWindow> {
     // `__CAD_WINDOW__`: the interface keeps the autosave for the main window (apps/web/src/desktop.ts).
-    let script = format!("{}\nwindow.__CAD_WINDOW__ = {label:?};", app.state::<InitScript>().0);
-    WebviewWindowBuilder::new(app, label, WebviewUrl::default())
+    let init = app.state::<InitScript>();
+    let mut script = format!("{}\nwindow.__CAD_WINDOW__ = {label:?};", init.script);
+    // Integrated title bar: the menu bar of the interface takes the place of the system one
+    // (apps/web/src/components/TitleBar.tsx). `__CAD_TITLEBAR__` tells it which window buttons to draw.
+    if init.integrated_title_bar {
+        script.push_str(&format!("\nwindow.__CAD_TITLEBAR__ = {:?};", std::env::consts::OS));
+    }
+    let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::default())
         // Product name (productName of tauri.conf.json, which the release script of the official builds may set).
         .title(&app.package_info().name)
         .inner_size(1440.0, 900.0)
@@ -37,8 +47,18 @@ fn build(app: &AppHandle, label: &str) -> tauri::Result<WebviewWindow> {
                 let _ = crate::links::open_external(url.to_string());
             }
             false
-        })
-        .build()
+        });
+    // macOS: the traffic lights stay native, over the page. Windows, Linux: no system frame, the interface draws
+    // the window buttons (Windows 11 Snap Layouts kept by the snap-layout plugin, see main.rs).
+    #[cfg(target_os = "macos")]
+    let builder = if init.integrated_title_bar {
+        builder.title_bar_style(tauri::TitleBarStyle::Overlay).hidden_title(true)
+    } else {
+        builder
+    };
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.decorations(!init.integrated_title_bar);
+    builder.build()
 }
 
 /// Pages of the application: `tauri://localhost` (Linux, macOS), `http(s)://tauri.localhost` (Windows),

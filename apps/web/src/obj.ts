@@ -1,6 +1,7 @@
 /** Conversion of STL meshes (binary or ASCII): merging of placed parts, STL, Wavefront OBJ or 3MF output. */
 
 import { strToU8, zipSync } from "fflate";
+import { t } from "./i18n.ts";
 
 /** Triangle: 3 vertices × (x, y, z). */
 export type Tri = [number, number, number, number, number, number, number, number, number];
@@ -143,7 +144,7 @@ export function objectsTo3mf(objects: PrintObject[]): Uint8Array {
     resources.push(xml.join(""));
     for (const m of o.placements) items.push(`<item objectid="${id}"${m ? ` transform="${transformOf(m)}"` : ""}/>`);
   });
-  if (!items.length) throw new Error("Aucune géométrie à exporter");
+  if (!items.length) throw new Error(t("exp.empty"));
   const model = `<?xml version="1.0" encoding="UTF-8"?>
 <model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><metadata name="Application">Solidus</metadata><resources>${resources.join("")}</resources><build>${items.join("")}</build></model>`;
   return zipSync({

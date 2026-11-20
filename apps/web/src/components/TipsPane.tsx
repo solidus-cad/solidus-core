@@ -1,6 +1,10 @@
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 import { t } from "../i18n.ts";
+import { contributions } from "../host.ts";
 import { TIPS } from "./tips.ts";
+import { ExampleCards } from "./ExampleCards.tsx";
+
+const LIBRARY_TAB = "right.library";
 
 const url = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
@@ -59,6 +63,17 @@ export function TipsPane(props: { legend: { tab: string; icon: string; label: ()
           </button>
         </div>
       </article>
+      {/* Library tab (account module): shortcut under the tip, above the examples. */}
+      <Show when={contributions("rightTabs").some((c) => c.id === LIBRARY_TAB)}>
+        <button class="link-btn tips-library" onClick={() => props.onOpen(LIBRARY_TAB)}>
+          {t("tip.toLibrary")} →
+        </button>
+      </Show>
+      {/* Example assemblies: one click opens the assembly, its parts open on their own from its tree. */}
+      <section class="tips-examples">
+        <span class="label">{t("ex.title")}</span>
+        <ExampleCards />
+      </section>
     </div>
   );
 }

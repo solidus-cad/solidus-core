@@ -3,7 +3,7 @@ import { t } from "../i18n.ts";
 import { activeSection, toggleCut } from "../section.ts";
 import { startSketch3D } from "../sketch3d/session.ts";
 import { hasModuleAction, runModuleAction } from "../host.ts";
-import { componentAt, copySelection, deleteSelection, editInPlace, editPartInContext, partDoc, pickComponent, setFlexible, updateComponent, ws } from "../workspace.ts";
+import { canPasteComponents, componentAt, copySelection, copyToClipboard, cutToClipboard, deleteSelection, editInPlace, editPartInContext, partDoc, pasteFromClipboard, pickComponent, setFlexible, updateComponent, ws } from "../workspace.ts";
 import { openReplaceDialog } from "./ReplaceDialog.tsx";
 
 /**
@@ -17,10 +17,11 @@ export function componentMenuItems(path: string, rename?: () => void): MenuItem[
   const top = !path.includes("/");
   const part = !c.assemblyId && !!c.partId;
   const items: MenuItem[] = [];
-  // Hide: top-level occurrence (a sub-assembly part belongs to it).
-  if (top) items.push({ label: c.hidden ? t("asm.show") : t("asm.hide"), run: () => updateComponent(c.id, { hidden: !c.hidden }) });
+  // Opening first: alone in its tab, or in place among the other parts.
   items.push({ label: c.assemblyId ? t("asm.openSub") : t("asm.open"), run: () => editPartInContext(path) });
   if (part && !c.skeleton) items.push({ label: t("asm.editInPlace"), run: () => editInPlace(path) });
+  // Hide: top-level occurrence (a sub-assembly part belongs to it).
+  if (top) items.push({ label: c.hidden ? t("asm.show") : t("asm.hide"), run: () => updateComponent(c.id, { hidden: !c.hidden }) });
   if (top && !c.skeleton) items.push({ label: `${t("asm.replace")}…`, run: () => openReplaceDialog(c.id) });
   if (!top) return items;
 
@@ -34,6 +35,8 @@ export function componentMenuItems(path: string, rename?: () => void): MenuItem[
   }
   const section = activeSection();
   if (section) items.push({ label: section.excluded.includes(c.id) ? t("sec.doCut") : t("sec.noCut"), run: () => toggleCut(c.id) });
-  items.push({ label: t("asm.copy"), run: copySelection }, { label: t("tree.delete"), run: deleteSelection, danger: true });
+  items.push({ label: t("asm.clipCopy"), run: copyToClipboard }, { label: t("asm.cut"), run: cutToClipboard });
+  if (canPasteComponents()) items.push({ label: t("asm.paste"), run: () => void pasteFromClipboard() });
+  items.push({ label: t("asm.duplicate"), run: copySelection }, { label: t("tree.delete"), run: deleteSelection, danger: true });
   return items;
 }

@@ -1,5 +1,5 @@
 import { createEffect, createSignal, For, on, Show } from "solid-js";
-import { lang, t, tx } from "../i18n.ts";
+import { lang, t, tx, uiLang } from "../i18n.ts";
 import { setMessage } from "../store.ts";
 import { Dynamic } from "solid-js/web";
 import { contributions } from "../host.ts";
@@ -14,7 +14,7 @@ const [open, setOpen] = createSignal(false);
 export const openPluginsDialog = () => setOpen(true);
 
 /** Text per catalog language, falling back to French, then to the first language provided. */
-const localized = (text: Record<string, string>): string => text[lang()] ?? text.fr ?? Object.values(text)[0] ?? "";
+const localized = (text: Record<string, string>): string => text[uiLang()] ?? text[lang()] ?? text.fr ?? Object.values(text)[0] ?? "";
 
 const errorText = (e: unknown) => (e instanceof Error && !("status" in e) ? e.message : (catalogSource()?.errorText(e) ?? String(e)));
 const signedIn = () => !!catalogSource()?.signedIn();

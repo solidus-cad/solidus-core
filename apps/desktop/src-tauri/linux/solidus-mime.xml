@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Solidus document types (installed in /usr/share/mime/packages by the .deb). They are zip archives:
+     sub-class of application/zip, recognised by their extension. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-solidus-part">
+    <comment>Solidus part</comment>
+    <comment xml:lang="fr">Pièce Solidus</comment>
+    <sub-class-of type="application/zip"/>
+    <generic-icon name="x-office-drawing"/>
+    <glob pattern="*.vpart"/>
+  </mime-type>
+  <mime-type type="application/x-solidus-assembly">
+    <comment>Solidus assembly</comment>
+    <comment xml:lang="fr">Assemblage Solidus</comment>
+    <sub-class-of type="application/zip"/>
+    <generic-icon name="x-office-drawing"/>
+    <glob pattern="*.vasm"/>
+  </mime-type>
+</mime-info>

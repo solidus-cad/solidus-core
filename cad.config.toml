@@ -27,3 +27,7 @@ proxy = ""
 # Language at first startup: "auto" (system language), "fr" or "en".
 # The choice made later in Settings takes precedence.
 language = "auto"
+
+# Title bar: "integrated" (menus and search in the title bar of the window) or "system"
+# (title bar of the operating system above the menu bar).
+title_bar = "integrated"

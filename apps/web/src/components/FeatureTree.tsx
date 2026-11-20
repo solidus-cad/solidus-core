@@ -1,5 +1,5 @@
-import { createSignal, For, Show } from "solid-js";
-import { evaluate, isValidName, MATERIAL_FAMILIES, materialSheet, MATERIALS } from "@solidus-cad/sdk";
+import { createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import { evaluate, isValidName, MATERIAL_FAMILIES, materialSheet, MATERIALS, type Feature } from "@solidus-cad/sdk";
 import { FamilyPanel } from "./FamilyPanel.tsx";
 import { MATERIAL_FIELDS, openMaterialEditor } from "./MaterialDialog.tsx";
 import { allMaterials, customMaterials, isCustomMaterial } from "../materials.ts";
@@ -17,6 +17,10 @@ import {
   togglePlane,
   toggleSketchVisibility,
   consumedSketches,
+  sketchesUsedBy,
+  skeletonSketches,
+  assignSketch,
+  canAssignSketch,
   toggleDatumVisibility,
   removeParameter,
   renameFeature,
@@ -38,7 +42,7 @@ import {
 import { openContextMenu } from "./ContextMenu.tsx";
 import { pickColor } from "./colorPick.ts";
 import { checkpointMenu } from "./CheckpointDialog.tsx";
-import { commit as commitDoc } from "../store.ts";
+import { commit as commitDoc, hoverTreeNode } from "../store.ts";
 import { freezeLinks, linkTitle, sketchLinks } from "../assembly/external.ts";
 import { Stepper } from "./Stepper.tsx";
 import { openFirstPartTour } from "../tour/FirstPartTour.tsx";
@@ -229,7 +233,7 @@ function Bodies() {
     const hidden = () => bodyHidden(id);
     const surface = bodyKind(id) === "surface";
     return (
-      <div class="tree-row" classList={{ active: target() === id, consumed: state.consumedBodies.includes(id) }} onClick={() => setTargetBody(id)} onContextMenu={(e) => menu(e, id)} title={t("tree.bodyTarget")}>
+      <div class="tree-row" classList={{ active: target() === id, consumed: state.consumedBodies.includes(id) }} onClick={() => setTargetBody(id)} onContextMenu={(e) => menu(e, id)} onMouseEnter={() => hoverTreeNode({ body: id })} onMouseLeave={() => hoverTreeNode(null)} title={t("tree.bodyTarget")}>
         <span class="asm-icon" title={t(surface ? "body.surface" : "body.solid")}>
           {surface ? "◇" : "◆"}
         </span>
@@ -367,6 +371,168 @@ export function FeatureTree() {
     setDragging(id);
   };
 
+  /** Plane sketches folded under the features that build on them (skeletons excepted), by feature. */
+  const skeletons = createMemo(() => skeletonSketches(state.doc.features));
+  const foldedBy = createMemo(() => {
+    const sketches = new Set(state.doc.features.filter((f) => f.type === "sketch" && !skeletons().has(f.id)).map((f) => f.id));
+    return new Map(state.doc.features.map((f) => [f.id, sketchesUsedBy(f).filter((id) => sketches.has(id))]));
+  });
+  const nestedSketches = createMemo(() => new Set([...foldedBy().values()].flat()));
+  const [folds, setFolds] = createSignal<ReadonlySet<string>>(new Set());
+  const setFold = (id: string, open: boolean) =>
+    setFolds((s) => {
+      const n = new Set(s);
+      if (open) n.add(id);
+      else n.delete(id);
+      return n;
+    });
+  /** Sketch picked in a fold: the next feature clicked builds on it too. */
+  const [picked, setPicked] = createSignal<string | null>(null);
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && picked()) setPicked(null);
+  };
+  document.addEventListener("keydown", onKey);
+  onCleanup(() => document.removeEventListener("keydown", onKey));
+
+  /** Row of a feature; `parent`: the feature it is folded under (sketch shown in a fold). */
+  const Row = (f: Feature, i: () => number, parent?: string) => {
+    const def = () => definitionOf(f.type);
+    const error = () => state.statuses[f.id];
+    const after = () => i() >= state.doc.rollback;
+    const folded = () => (parent ? [] : (foldedBy().get(f.id) ?? []));
+    const isOpen = () => folds().has(f.id) && folded().length > 0;
+    const assignable = () => !!picked() && !parent && canAssignSketch(picked()!, f.id);
+    return (
+    <div
+      class="tree-row"
+      classList={{
+        nested: !!parent,
+        assignable: assignable(),
+        picked: picked() === f.id,
+        active: state.activeFeatureId === f.id,
+        editing: state.editing?.featureId === f.id,
+        suppressed: !!f.suppressed,
+        after: after(),
+        error: !!error() && !after(),
+        "drop-before": !parent && dropAt() === i(),
+        "drop-after": !parent && dropAt() === i() + 1 && i() === state.doc.features.length - 1,
+      }}
+      draggable={!parent && renaming() !== f.id}
+      onDragStart={(e) => startDrag(e, f.id)}
+      onDragEnd={() => {
+        setDragging(null);
+        setDropAt(null);
+      }}
+      onDragOver={(e) => !parent && onDragOver(e, i())}
+      onClick={() => {
+        // Sketch picked in a fold: the clicked feature builds on it too.
+        const p = picked();
+        if (p && p !== f.id && assignable()) {
+          const name = state.doc.features.find((x) => x.id === p)?.name ?? "";
+          assignSketch(p, f.id);
+          setPicked(null);
+          setFold(f.id, true);
+          setState("activeFeatureId", f.id);
+          setState("message", t("tree.sketchAssigned").replace("{sketch}", name).replace("{feature}", f.name));
+          return;
+        }
+        setPicked(parent && picked() !== f.id ? f.id : null);
+        if (picked()) setState("message", t("tree.pickSketch"));
+        setState("activeFeatureId", f.id);
+        // Dimensions shown: they follow the selected feature.
+        if (state.dimsFeature) showFeatureDims(f.id);
+        // Reference plane: plane of the next sketch (or first element of the next plane).
+        if (f.type === "plane") selectPlane(f.id);
+      }}
+      onDblClick={() => editFeature(f.id)}
+      onContextMenu={(e) => menuFor(e, f.id, i())}
+      onMouseEnter={() => hoverTreeNode({ feature: f.id })}
+      onMouseLeave={() => hoverTreeNode(null)}
+      title={error() ?? ""}
+    >
+      <Show when={!parent} fallback={<span class="fold-gap" />}>
+        <button
+          class="fold"
+          classList={{ empty: !folded().length }}
+          tabIndex={-1}
+          aria-label={t("tree.foldSketches")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setFold(f.id, !isOpen());
+          }}
+          onDblClick={(e) => e.stopPropagation()}
+        >
+          <span class="chevron" classList={{ open: isOpen() }}>
+            ▸
+          </span>
+        </button>
+      </Show>
+      <span class="icon" innerHTML={def()?.icon ?? (f.type === "sketch3d" ? SKETCH3D_ICON : f.type === "frameMembers" ? FRAME_ICON : "")} />
+      <Show when={renaming() === f.id} fallback={<span class="name">{f.name}</span>}>
+        <input
+          class="rename"
+          value={f.name}
+          ref={(el) => queueMicrotask(() => el.select())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") setRenaming(null);
+          }}
+          onBlur={(e) => {
+            if (renaming() === f.id) renameFeature(f.id, e.currentTarget.value);
+            setRenaming(null);
+          }}
+        />
+      </Show>
+      <Show when={sketchLinks(f).length}>
+        <span class="link-badge" classList={{ broken: sketchLinks(f).some((l) => l.broken) }} title={linkTitle(f)}>
+          {sketchLinks(f).some((l) => l.broken) ? "⚠" : "🔗"}
+        </span>
+      </Show>
+      <Show when={state.doc.appearance.features?.[f.id]}>
+        {(c) => <span class="tree-color" style={{ background: c() }} title={t("color.feature")} />}
+      </Show>
+      <Show when={error() && !after()}>
+        <span class="badge-error" aria-label={error()!}>
+          !
+        </span>
+      </Show>
+      <Show when={f.type === "plane"}>
+        <button
+          class="icon-btn eye"
+          classList={{ forced: state.selectedPlane === f.id }}
+          title={state.doc.display?.hiddenDatums?.includes(f.id) ? t("asm.show") : t("asm.hide")}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleDatumVisibility(f.id);
+          }}
+        >
+          {state.doc.display?.hiddenDatums?.includes(f.id) ? "◌" : "●"}
+        </button>
+      </Show>
+      <Show when={f.type === "sketch" || f.type === "sketch3d"}>
+        {(() => {
+          const consumed = () => consumedSketches(state.doc.features).has(f.id);
+          const forced = () => state.doc.display?.sketches?.[f.id];
+          const shown = () => forced() ?? !consumed();
+          return (
+            <button
+              class="icon-btn eye"
+              classList={{ forced: forced() !== undefined }}
+              title={shown() ? t("asm.hide") : t("asm.show")}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSketchVisibility(f.id, consumed());
+              }}
+            >
+              {shown() ? "●" : "◌"}
+            </button>
+          );
+        })()}
+      </Show>
+    </div>
+    );
+  };
+
   const RollbackBar = () => (
     <div
       class="rollback-bar"
@@ -416,110 +582,24 @@ export function FeatureTree() {
             </button>
           </Show>
           <For each={state.doc.features}>
-            {(f, i) => {
-              const def = () => definitionOf(f.type);
-              const error = () => state.statuses[f.id];
-              const after = () => i() >= state.doc.rollback;
-              return (
-                <>
-                  <Show when={i() === state.doc.rollback}>
-                    <RollbackBar />
+            {(f, i) => (
+              <>
+                <Show when={i() === state.doc.rollback}>
+                  <RollbackBar />
+                </Show>
+                <Show when={!nestedSketches().has(f.id)}>
+                  {Row(f, i)}
+                  <Show when={folds().has(f.id)}>
+                    <For each={foldedBy().get(f.id) ?? []}>
+                      {(id) => {
+                        const index = () => state.doc.features.findIndex((x) => x.id === id);
+                        return <Show when={state.doc.features[index()]}>{(sk) => Row(sk(), index, f.id)}</Show>;
+                      }}
+                    </For>
                   </Show>
-                  <div
-                    class="tree-row"
-                    classList={{
-                      active: state.activeFeatureId === f.id,
-                      editing: state.editing?.featureId === f.id,
-                      suppressed: !!f.suppressed,
-                      after: after(),
-                      error: !!error() && !after(),
-                      "drop-before": dropAt() === i(),
-                      "drop-after": dropAt() === i() + 1 && i() === state.doc.features.length - 1,
-                    }}
-                    draggable={renaming() !== f.id}
-                    onDragStart={(e) => startDrag(e, f.id)}
-                    onDragEnd={() => {
-                      setDragging(null);
-                      setDropAt(null);
-                    }}
-                    onDragOver={(e) => onDragOver(e, i())}
-                    onClick={() => {
-                      setState("activeFeatureId", f.id);
-                      // Dimensions shown: they follow the selected feature.
-                      if (state.dimsFeature) showFeatureDims(f.id);
-                      // Reference plane: plane of the next sketch (or first element of the next plane).
-                      if (f.type === "plane") selectPlane(f.id);
-                    }}
-                    onDblClick={() => editFeature(f.id)}
-                    onContextMenu={(e) => menuFor(e, f.id, i())}
-                    title={error() ?? ""}
-                  >
-                    <span class="icon" innerHTML={def()?.icon ?? (f.type === "sketch3d" ? SKETCH3D_ICON : f.type === "frameMembers" ? FRAME_ICON : "")} />
-                    <Show when={renaming() === f.id} fallback={<span class="name">{f.name}</span>}>
-                      <input
-                        class="rename"
-                        value={f.name}
-                        ref={(el) => queueMicrotask(() => el.select())}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") e.currentTarget.blur();
-                          if (e.key === "Escape") setRenaming(null);
-                        }}
-                        onBlur={(e) => {
-                          if (renaming() === f.id) renameFeature(f.id, e.currentTarget.value);
-                          setRenaming(null);
-                        }}
-                      />
-                    </Show>
-                    <Show when={sketchLinks(f).length}>
-                      <span class="link-badge" classList={{ broken: sketchLinks(f).some((l) => l.broken) }} title={linkTitle(f)}>
-                        {sketchLinks(f).some((l) => l.broken) ? "⚠" : "🔗"}
-                      </span>
-                    </Show>
-                    <Show when={state.doc.appearance.features?.[f.id]}>
-                      {(c) => <span class="tree-color" style={{ background: c() }} title={t("color.feature")} />}
-                    </Show>
-                    <Show when={error() && !after()}>
-                      <span class="badge-error" aria-label={error()!}>
-                        !
-                      </span>
-                    </Show>
-                    <Show when={f.type === "plane"}>
-                      <button
-                        class="icon-btn eye"
-                        classList={{ forced: state.selectedPlane === f.id }}
-                        title={state.doc.display?.hiddenDatums?.includes(f.id) ? t("asm.show") : t("asm.hide")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleDatumVisibility(f.id);
-                        }}
-                      >
-                        {state.doc.display?.hiddenDatums?.includes(f.id) ? "◌" : "●"}
-                      </button>
-                    </Show>
-                    <Show when={f.type === "sketch" || f.type === "sketch3d"}>
-                      {(() => {
-                        const consumed = () => consumedSketches(state.doc.features).has(f.id);
-                        const forced = () => state.doc.display?.sketches?.[f.id];
-                        const shown = () => forced() ?? !consumed();
-                        return (
-                          <button
-                            class="icon-btn eye"
-                            classList={{ forced: forced() !== undefined }}
-                            title={shown() ? t("asm.hide") : t("asm.show")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSketchVisibility(f.id, consumed());
-                            }}
-                          >
-                            {shown() ? "●" : "◌"}
-                          </button>
-                        );
-                      })()}
-                    </Show>
-                  </div>
-                </>
-              );
-            }}
+                </Show>
+              </>
+            )}
           </For>
           <Show when={state.doc.features.length > 0 && state.doc.rollback === state.doc.features.length}>
             <RollbackBar />

@@ -12,6 +12,8 @@ import { actionById } from "../keymap/registry.ts";
 import { Dynamic } from "solid-js/web";
 import { contributions } from "../host.ts";
 import { productName } from "../edition.ts";
+import { titleBar } from "../desktop.ts";
+import { useWindowFocus, WindowControls } from "./TitleBar.tsx";
 
 /** Undo/redo of the active workbench (part, sketch, drawing, assembly…): common keymap actions. */
 const HISTORY = [
@@ -38,6 +40,7 @@ export function MenuBar(props: { searchRef: (el: HTMLInputElement) => void }) {
   const [query, setQuery] = createSignal("");
   const [highlight, setHighlight] = createSignal(0);
   let root!: HTMLElement;
+  const focused = titleBar ? useWindowFocus() : () => true;
 
   onMount(() => {
     const close = (e: PointerEvent) => {
@@ -71,12 +74,19 @@ export function MenuBar(props: { searchRef: (el: HTMLInputElement) => void }) {
   };
 
   return (
-    <header class="menubar" ref={root}>
+    // Desktop with the integrated title bar: the menu bar is the title bar of the window (TitleBar.tsx). Its empty
+    // parts move the window ("deep": buttons and fields stay clickable); the menus and the search never do.
+    <header
+      class="menubar"
+      classList={{ titlebar: !!titleBar, [`tb-${titleBar}`]: !!titleBar, "tb-inactive": !focused() }}
+      ref={root}
+      data-tauri-drag-region={titleBar ? "deep" : undefined}
+    >
       <span class="brand">
         {productName()}
         <small class="brand-beta">beta</small>
       </span>
-      <nav class="menus">
+      <nav class="menus" data-tauri-drag-region="false">
         <For each={contributions("menuBarMenus")}>
           {(m) => (
             <Dynamic
@@ -186,7 +196,7 @@ export function MenuBar(props: { searchRef: (el: HTMLInputElement) => void }) {
           </span>
         </Show>
       </span>
-      <div class="search">
+      <div class="search" data-tauri-drag-region="false">
         <input
           ref={props.searchRef}
           type="search"
@@ -237,6 +247,9 @@ export function MenuBar(props: { searchRef: (el: HTMLInputElement) => void }) {
           <span class="badge">{errorCount() > 9 ? "9+" : errorCount()}</span>
         </Show>
       </button>
+      <Show when={titleBar && titleBar !== "macos"}>
+        <WindowControls />
+      </Show>
     </header>
   );
 }

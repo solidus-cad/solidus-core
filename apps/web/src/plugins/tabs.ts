@@ -18,6 +18,8 @@ export interface RibbonTab {
   visible?: () => boolean;
   /** Contextual tab: not clickable, distinct style. */
   contextual?: boolean;
+  /** Announced tab ("Coming soon" on hover): greyed, nothing behind it. */
+  soon?: boolean;
   /** Highlighted as the current tab. */
   active: () => boolean;
   disabled?: () => boolean;

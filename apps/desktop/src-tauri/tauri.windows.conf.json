@@ -1,0 +1,10 @@
+{
+  "build": {
+    "beforeBuildCommand": "pnpm --filter @solidus-cad/web build && pnpm --filter @solidus-cad/desktop thumbnail-win"
+  },
+  "bundle": {
+    "resources": {
+      "../thumbnail-win/target/x86_64-pc-windows-msvc/release/solidus_thumbnail.dll": "solidus_thumbnail.dll"
+    }
+  }
+}

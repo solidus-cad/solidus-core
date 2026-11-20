@@ -18,6 +18,7 @@ import {
   undo,
 } from "./store.ts";
 import { exportAs, importDocument, openDocument, packActive, saveActive, saveActiveAs } from "./files.ts";
+import { openRecentDialog } from "./docfiles/RecentDialog.tsx";
 import { docFs } from "./docfiles/fs.ts";
 import { openAssemblyExport } from "./components/ExportAssemblyDialog.tsx";
 import { openCheckpointCreate, openCheckpointList } from "./components/CheckpointDialog.tsx";
@@ -86,6 +87,7 @@ const exportCommand = (format: "step" | "stl" | "obj" | "3mf") => (wsp.activeKin
 const builtin: AppCommand[] = [
   { id: "file.new", label: fixed("cmd.new"), run: newDocument },
   { id: "file.open", label: fixed("cmd.open"), run: openDocument },
+  { id: "file.openRecent", label: fixed("file.openRecent"), run: openRecentDialog },
   { id: "file.save", label: fixed("cmd.save"), run: () => void saveActive() },
   { id: "file.saveAs", label: fixed("cmd.saveAs"), run: () => void saveActiveAs() },
   { id: "file.import", label: fixed("cmd.import"), run: importDocument },
@@ -161,7 +163,7 @@ export function runCommand(id: string): void {
 export type MenuEntry = string | { label: TKey; items: string[] };
 
 export const menus: { label: TKey; items: MenuEntry[] }[] = [
-  { label: "menu.file", items: ["file.newPart", "file.newAssembly", "file.open", "file.save", "file.saveAs", "-", ...(docFs.kind === "desktop" ? [] : ["file.projectFolder"]), "file.import", "-", "file.checkpoint", "file.versions", "-", { label: "cmd.exportMenu", items: ["file.exportStep", "file.exportStl", "file.exportObj", "file.export3mf"] }, "file.pack"] },
+  { label: "menu.file", items: ["file.newPart", "file.newAssembly", "file.open", "file.openRecent", "file.save", "file.saveAs", "-", ...(docFs.kind === "desktop" ? [] : ["file.projectFolder"]), "file.import", "-", "file.checkpoint", "file.versions", "-", { label: "cmd.exportMenu", items: ["file.exportStep", "file.exportStl", "file.exportObj", "file.export3mf"] }, "file.pack"] },
   { label: "menu.edit", items: ["edit.undo", "edit.redo"] },
   { label: "menu.view", items: ["view.fit", "-", ...views.map((v) => `view.${v}`), "-", ...modes.map((m) => `mode.${m}`), "-", "view.section", "view.grid", "view.realistic", "-", "view.newWindow"] },
   { label: "menu.settings", items: ["settings.user", "settings.shortcuts", "settings.gestures", "-", "settings.appearance"] },

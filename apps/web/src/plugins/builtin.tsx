@@ -13,6 +13,7 @@ import { MeasureRibbon } from "../components/MeasurePanel.tsx";
 import { DeclarativeRibbon } from "../components/DeclarativeRibbon.tsx";
 import { benchFeatureOf, benchRegistry } from "./benches.ts";
 import { MODULES } from "./modules.ts";
+import { toolRegistry } from "./tools.ts";
 import { partBenchId, pluginTabId, pluginTabShown, setPartBenchId, setPluginTabId, tabRegistry, type RibbonTab } from "./tabs.ts";
 
 /** Built-in workbenches: ribbon tabs registered at startup, with the same API as plugins. */
@@ -110,6 +111,33 @@ const fixedTabs: RibbonTab[] = [
   },
 
 ];
+
+/** Announced workbenches: greyed tab, "Coming soon" on hover, hidden as soon as the real module is loaded. */
+const MESH_LABEL = {
+  fr: "Maillage", en: "Mesh", de: "Netz", es: "Malla", it: "Mesh", pt: "Malha", pl: "Siatka", ru: "Сетка",
+  cs: "Síť", tr: "Mesh", zh: "网格", "zh-TW": "網格", ja: "メッシュ", ko: "메시", ar: "شبكة",
+};
+/** `present`: the real module is loaded (its tab or its tool is registered). */
+const QUOTE_LABEL = {
+  fr: "Chiffrage", en: "Quoting", de: "Kalkulation", es: "Presupuestos", it: "Preventivo", pt: "Orçamento", pl: "Wycena",
+  ru: "Смета", cs: "Kalkulace", tr: "Teklif", zh: "报价", "zh-TW": "報價", ja: "見積り", ko: "견적", ar: "التسعير",
+};
+const soonTab =(id: string, label: () => string, order: number, present: () => boolean): RibbonTab => ({
+  id: `soon:${id}`,
+  label,
+  order,
+  soon: true,
+  visible: () => !present(),
+  active: () => false,
+  title: () => t("plg.soon"),
+});
+fixedTabs.push(
+  soonTab("cam", () => t("bench.cam"), 50, () => !!tabRegistry.get("cam")),
+  soonTab("quote", () => tx(QUOTE_LABEL), 60, () => !!tabRegistry.get("quote")),
+  soonTab("mesh", () => tx(MESH_LABEL), 100, () => !!tabRegistry.get("bench:mesh")),
+  // The PLM module has no ribbon tab of its own (tool + right pane): the announced tab gives way to its tool.
+  soonTab("plm", () => "PLM", 101, () => !!toolRegistry.get("plm")),
+);
 
 tabRegistry.add(...fixedTabs, ...benchRegistry.list().map(benchTab));
 

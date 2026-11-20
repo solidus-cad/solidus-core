@@ -1,4 +1,5 @@
-import { For, Show } from "solid-js";
+import { For, onCleanup, Show } from "solid-js";
+import { installRibbonMarks } from "./ribbonMarks.ts";
 import { t } from "../i18n.ts";
 import { HoverPreview } from "./HoverPreview.tsx";
 import { panels, PanelToggle } from "./PanelToggle.tsx";
@@ -37,16 +38,16 @@ export function Ribbon() {
   const collapsed = () => panels.top.collapsed() && !visibleTabs().some((tab) => tab.contextual);
 
   return (
-    <section class="ribbon" {...panels.top.hover}>
+    <section class="ribbon" {...panels.top.hover} ref={(el) => onCleanup(installRibbonMarks(el))}>
       <div class="ribbon-tabs" role="tablist">
         <For each={visibleTabs()}>
           {(tab) =>
             tab.contextual ? (
-              <button role="tab" class="active contextual">
+              <button role="tab" class="active contextual" data-tab={tab.id}>
                 {tab.label()}
               </button>
             ) : (
-              <button role="tab" classList={{ active: tab.active() }} disabled={tab.disabled?.()} title={tab.title?.()} onClick={() => openTab(tab)}>
+              <button role="tab" data-tab={tab.id} classList={{ active: tab.active(), soon: !!tab.soon }} aria-disabled={tab.soon || undefined} disabled={tab.disabled?.()} title={tab.title?.()} onClick={() => openTab(tab)}>
                 {tab.label()}
               </button>
             )

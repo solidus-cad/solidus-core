@@ -38,7 +38,7 @@ test("assembly: insertion, bill of materials, in-context editing", async ({ page
 
   // Selection, copy and undo.
   await page.locator(".tree-row:not(.mate-row)", { hasText: "Pièce1 <2>" }).click();
-  await page.getByRole("button", { name: "Copier" }).click();
+  await page.getByRole("button", { name: "Dupliquer" }).click();
   await expect(status).toContainText("3 occurrence(s)");
   await page.keyboard.press("Control+z");
   await expect(status).toContainText("2 occurrence(s)");

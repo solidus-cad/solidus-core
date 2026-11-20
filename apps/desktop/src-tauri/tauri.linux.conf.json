@@ -9,7 +9,9 @@
       "deb": {
         "files": {
           "/usr/share/doc/solidus/LICENSE": "../../../LICENSE",
-          "/usr/share/doc/solidus/THIRD_PARTY_LICENSES": "../../../THIRD_PARTY_LICENSES"
+          "/usr/share/doc/solidus/THIRD_PARTY_LICENSES": "../../../THIRD_PARTY_LICENSES",
+          "/usr/share/mime/packages/solidus.xml": "linux/solidus-mime.xml",
+          "/usr/share/thumbnailers/solidus.thumbnailer": "linux/solidus.thumbnailer"
         }
       },
       "appimage": {

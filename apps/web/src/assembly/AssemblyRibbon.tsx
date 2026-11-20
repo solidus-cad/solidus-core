@@ -1,6 +1,6 @@
 import { For, Show } from "solid-js";
 import { t, type TKey } from "../i18n.ts";
-import { checkInterferences, copySelection, deleteSelection, groupSelection, insertSkeleton, mateTypeAllowed, pickComponent, redoAsm, setGizmo, setWs, startMate, undoAsm, updateComponent, ws } from "../workspace.ts";
+import { canPasteComponents, checkInterferences, copySelection, copyToClipboard, cutToClipboard, pasteFromClipboard, deleteSelection, groupSelection, insertSkeleton, mateTypeAllowed, pickComponent, redoAsm, setGizmo, setWs, startMate, undoAsm, updateComponent, ws } from "../workspace.ts";
 import { startSketch3D } from "../sketch3d/session.ts";
 import type { MateType } from "@solidus-cad/sdk";
 import { hasModuleAction, runModuleAction } from "../host.ts";
@@ -51,7 +51,7 @@ const GROUPS: { label?: TKey; buttons: Btn[]; stacked?: boolean }[] = [
     label: "asm.g.components",
     stacked: true,
     buttons: [
-      { label: "asm.copy", icon: svg('<rect x="8" y="8" width="12" height="12" rx="1"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>'), run: copySelection, needsSelection: true, action: "assembly.copy" },
+      { label: "asm.duplicate", icon: svg('<rect x="8" y="8" width="12" height="12" rx="1"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>'), run: copySelection, needsSelection: true, action: "assembly.copy" },
       { label: "tree.delete", icon: svg('<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>'), run: deleteSelection, needsSelection: true, action: "assembly.delete" },
       { label: "asm.groupSel", icon: svg('<path d="M3 7h6l2 2h10v10H3z"/>'), run: groupSelection, needsSelection: true, action: "assembly.group" },
     ],
@@ -124,6 +124,9 @@ const GROUPS: { label?: TKey; buttons: Btn[]; stacked?: boolean }[] = [
   },
 ];
 
+/** Text selected in the page (panel, dialog): Ctrl+C / Ctrl+X are left to the browser. */
+const textSelected = (): boolean => !!window.getSelection()?.toString();
+
 /** CAD profile shortcuts for assembly actions. */
 const ASM_DEFAULTS: Record<string, string[]> = {
   "assembly.move": ["M"],
@@ -149,6 +152,10 @@ registerActions([
   ...ASM_ACTIONS,
   { id: "assembly.undo", scope: "assembly", label: () => t("cmd.undo"), defaults: [], run: () => undoAsm(), enabled: () => ws.canUndo },
   { id: "assembly.redo", scope: "assembly", label: () => t("cmd.redo"), defaults: [], run: () => redoAsm(), enabled: () => ws.canRedo },
+  // Clipboard: inactive while text is selected in the interface (the browser copy keeps working).
+  { id: "assembly.clipCopy", scope: "assembly", label: () => t("asm.clipCopy"), defaults: ["Ctrl+C"], run: copyToClipboard, enabled: () => ws.selection.length > 0 && !textSelected() },
+  { id: "assembly.cut", scope: "assembly", label: () => t("asm.cut"), defaults: ["Ctrl+X"], run: cutToClipboard, enabled: () => ws.selection.length > 0 && !textSelected() },
+  { id: "assembly.paste", scope: "assembly", label: () => t("asm.paste"), defaults: ["Ctrl+V"], run: () => void pasteFromClipboard(), enabled: canPasteComponents },
   { id: "assembly.cancel", scope: "assembly", label: () => t("key.cancelAsm"), defaults: ["Escape"], locked: true, run: () => pickComponent(null, false) },
 ]);
 
