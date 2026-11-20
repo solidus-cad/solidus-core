@@ -30,7 +30,7 @@ windows = { version = "0.62", features = ["Win32_Security_Cryptography"], option
 
 [target.'cfg(not(windows))'.dependencies]
 p256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"], optional = true }
-aes-gcm = { version = "0.10", optional = true }
+aes-gcm = { version = "0.11", optional = true }
 getrandom = { version = "0.2", optional = true }
 
 [features]
