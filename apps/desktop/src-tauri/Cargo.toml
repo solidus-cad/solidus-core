@@ -14,6 +14,8 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = { version = "2", optional = true }
 tauri-plugin-window-state = "2"
+# A double-click on a document while Solidus runs opens it in the running instance (main.rs).
+tauri-plugin-single-instance = "2"
 # Windows 11 Snap Layouts on the maximize button of the integrated title bar (no-op elsewhere).
 tauri-plugin-snap-layout = "1"
 serde = { version = "1", features = ["derive"] }

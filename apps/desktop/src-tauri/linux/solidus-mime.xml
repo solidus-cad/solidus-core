@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Solidus document types (installed in /usr/share/mime/packages by the .deb). They are zip archives:
-     sub-class of application/zip, recognised by their extension. -->
+     sub-class of application/zip, recognised by their extension. Icon: the application's (cad-desktop, installed in
+     the hicolor theme by the .deb), the generic one if the theme has none. -->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
   <mime-type type="application/x-solidus-part">
     <comment>Solidus part</comment>
     <comment xml:lang="fr">Pièce Solidus</comment>
     <sub-class-of type="application/zip"/>
+    <icon name="cad-desktop"/>
     <generic-icon name="x-office-drawing"/>
     <glob pattern="*.vpart"/>
   </mime-type>
@@ -13,7 +15,16 @@
     <comment>Solidus assembly</comment>
     <comment xml:lang="fr">Assemblage Solidus</comment>
     <sub-class-of type="application/zip"/>
+    <icon name="cad-desktop"/>
     <generic-icon name="x-office-drawing"/>
     <glob pattern="*.vasm"/>
+  </mime-type>
+  <mime-type type="application/x-solidus-drawing">
+    <comment>Solidus drawing</comment>
+    <comment xml:lang="fr">Mise en plan Solidus</comment>
+    <sub-class-of type="application/zip"/>
+    <icon name="cad-desktop"/>
+    <generic-icon name="x-office-drawing"/>
+    <glob pattern="*.vdrw"/>
   </mime-type>
 </mime-info>

@@ -134,6 +134,22 @@ pub async fn fs_pick_dir(app: AppHandle, window: WebviewWindow) -> Option<String
     rx.await.ok().flatten().and_then(|p| p.into_path().ok()).map(shown)
 }
 
+/// Documents passed on the command line: double-click in the file manager (file associations of tauri.conf.json,
+/// `cad-desktop "C:\…\a.vpart"` on Windows, `cad-desktop %F` on Linux), or a second launch forwarded by the
+/// single-instance plugin (main.rs). Relative paths are resolved against `cwd`; anything else is ignored.
+pub fn documents_in(args: impl IntoIterator<Item = String>, cwd: &Path) -> Vec<String> {
+    args.into_iter()
+        .filter(|a| !a.starts_with('-'))
+        .map(|a| {
+            let p = PathBuf::from(a);
+            if p.is_absolute() { p } else { cwd.join(p) }
+        })
+        .filter(|p| p.is_file())
+        .filter_map(|p| checked(&p.to_string_lossy()).ok())
+        .map(shown)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -156,5 +172,17 @@ mod tests {
         assert!(checked_among(&pack, &WRITABLE).is_ok());
         assert!(checked(&format!("{DIR}a.exe")).is_err());
         assert!(checked("a.vpart").is_err());
+    }
+
+    #[test]
+    fn documents_from_the_command_line() {
+        let dir = std::env::temp_dir().join(format!("solidus-args-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("a.vpart"), b"x").unwrap();
+        std::fs::write(dir.join("b.txt"), b"x").unwrap();
+        let args = ["a.vpart", "b.txt", "missing.vasm", "--flag"].map(String::from);
+        let found = documents_in(args, &dir);
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(found, vec![shown(dir.join("a.vpart"))]);
     }
 }

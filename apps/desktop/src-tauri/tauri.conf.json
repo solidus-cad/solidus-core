@@ -24,6 +24,11 @@
     "category": "Productivity",
     "externalBin": ["binaries/cad-kernel"],
     "shortDescription": "Mechanical CAD",
+    "fileAssociations": [
+      { "ext": ["vpart"], "name": "Solidus.Part", "description": "Solidus part", "mimeType": "application/x-solidus-part", "role": "Editor" },
+      { "ext": ["vasm"], "name": "Solidus.Assembly", "description": "Solidus assembly", "mimeType": "application/x-solidus-assembly", "role": "Editor" },
+      { "ext": ["vdrw"], "name": "Solidus.Drawing", "description": "Solidus drawing", "mimeType": "application/x-solidus-drawing", "role": "Editor" }
+    ],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
     "resources": {
       "../../../cad.config.toml": "cad.config.default.toml",

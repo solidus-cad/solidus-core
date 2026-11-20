@@ -7,6 +7,7 @@
     ],
     "linux": {
       "deb": {
+        "desktopTemplate": "linux/solidus.desktop",
         "files": {
           "/usr/share/doc/solidus/LICENSE": "../../../LICENSE",
           "/usr/share/doc/solidus/THIRD_PARTY_LICENSES": "../../../THIRD_PARTY_LICENSES",

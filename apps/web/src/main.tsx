@@ -9,6 +9,7 @@ import { runStartup } from "./host.ts";
 import { restorePlugins } from "./plugins/settings.ts";
 import { endSplash, startSplash } from "./splash.ts";
 import { openExampleFromUrl } from "./docfiles/examples.ts";
+import { installLaunchFiles } from "./docfiles/launch.ts";
 
 // Splash screen (animated logo from the HTML): server gold sponsors, removed once the application is ready.
 startSplash();
@@ -24,5 +25,7 @@ render(() => <App />, document.getElementById("app")!);
 endSplash();
 // Deep link ?exemple=… / ?example=…: example assembly opened once the interface is up.
 void openExampleFromUrl();
+// Desktop: documents double-clicked in the file manager.
+installLaunchFiles();
 // Catalog plugins reactivated as in the last session.
 void restorePlugins();

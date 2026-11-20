@@ -19,10 +19,14 @@ pub struct InitScript {
 /// Number of the next additional window (`w-2`, `w-3`…).
 static NEXT: AtomicU32 = AtomicU32::new(2);
 
-fn build(app: &AppHandle, label: &str) -> tauri::Result<WebviewWindow> {
+fn build(app: &AppHandle, label: &str, open: &[String]) -> tauri::Result<WebviewWindow> {
     // `__CAD_WINDOW__`: the interface keeps the autosave for the main window (apps/web/src/desktop.ts).
     let init = app.state::<InitScript>();
     let mut script = format!("{}\nwindow.__CAD_WINDOW__ = {label:?};", init.script);
+    // Documents to open once the interface is ready (double-click in the file manager, apps/web/src/docfiles/launch.ts).
+    if !open.is_empty() {
+        script.push_str(&format!("\nwindow.__CAD_OPEN__ = {};", serde_json::to_string(open).unwrap_or_else(|_| "[]".into())));
+    }
     // Integrated title bar: the menu bar of the interface takes the place of the system one
     // (apps/web/src/components/TitleBar.tsx). `__CAD_TITLEBAR__` tells it which window buttons to draw.
     if init.integrated_title_bar {
@@ -74,15 +78,36 @@ fn is_app_url(url: &Url) -> bool {
     }
 }
 
-pub fn open_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
-    build(app, "main")
+pub fn open_main(app: &AppHandle, open: &[String]) -> tauri::Result<WebviewWindow> {
+    build(app, "main", open)
+}
+
+/// Second launch of the application (single-instance plugin, main.rs), typically a double-click on a document while
+/// Solidus is already running: the documents open in the window last used, which comes to the front.
+pub fn forward(app: &AppHandle, open: Vec<String>) {
+    let windows = app.webview_windows();
+    let target = windows
+        .values()
+        .find(|w| w.is_focused().unwrap_or(false))
+        .or_else(|| windows.get("main"))
+        .or_else(|| windows.values().next());
+    let Some(window) = target else {
+        let _ = build(app, "main", &open);
+        return;
+    };
+    if !open.is_empty() {
+        let list = serde_json::to_string(&open).unwrap_or_else(|_| "[]".into());
+        let _ = window.eval(format!("window.__cadOpenFiles ? window.__cadOpenFiles({list}) : (window.__CAD_OPEN__ = (window.__CAD_OPEN__ || []).concat({list}));"));
+    }
+    let _ = window.unminimize();
+    let _ = window.set_focus();
 }
 
 /// Opens an additional window (Window › New window).
 #[tauri::command]
 pub async fn window_new(app: AppHandle) -> Result<(), String> {
     let label = format!("w-{}", NEXT.fetch_add(1, Ordering::Relaxed));
-    let window = build(&app, &label).map_err(|e| e.to_string())?;
+    let window = build(&app, &label, &[]).map_err(|e| e.to_string())?;
     let _ = window.set_focus();
     Ok(())
 }

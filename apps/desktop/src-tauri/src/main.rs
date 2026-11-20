@@ -27,7 +27,15 @@ fn main() {
     if let Some(code) = thumbnail::cli() {
         std::process::exit(code);
     }
+    // Documents given on the command line (double-click in the file manager).
+    let cwd = std::env::current_dir().unwrap_or_default();
+    let open = files::documents_in(std::env::args().skip(1), &cwd);
     let builder = tauri::Builder::default()
+        // Registered first: a second launch (another double-click) hands its documents to the running instance
+        // and exits before creating anything.
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            windows::forward(app, files::documents_in(argv.into_iter().skip(1), std::path::Path::new(&cwd)));
+        }))
         .plugin(tauri_plugin_dialog::init())
         // Position and size only: the frame follows `[ui] title_bar`, not the previous session.
         .plugin(
@@ -75,7 +83,7 @@ fn main() {
                 window.app_handle().state::<kernel::Kernel>().release(window.label());
             }
         })
-        .setup(|app| {
+        .setup(move |app| {
             migrate::former_identifier(app.handle());
             let loaded = config::load(app.handle());
             let version = app.package_info().version.to_string();
@@ -84,7 +92,7 @@ fn main() {
                 script: format!("window.__CAD_CONFIG__ = {};", loaded.config.frontend(&version)),
                 integrated_title_bar: loaded.config.ui.integrated_title_bar(),
             });
-            windows::open_main(app.handle())?;
+            windows::open_main(app.handle(), &open)?;
             if let Some(error) = loaded.error {
                 app.dialog().message(error).title("Solidus — cad.config.toml").kind(MessageDialogKind::Warning).show(|_| {});
             }

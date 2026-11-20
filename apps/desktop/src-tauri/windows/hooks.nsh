@@ -14,6 +14,20 @@
 !define SOLIDUS_THUMB_CLSID "{2d4edcf3-9d60-4b39-930d-a0afb5d77707}"
 !define SOLIDUS_THUMB_SHELLEX "ShellEx\{e357fccd-a995-4576-b01f-234630154e96}"
 
+; File associations (bundle.fileAssociations of tauri.conf.json): Tauri's APP_ASSOCIATE writes .vpart → Solidus.Part
+; (icon = the exe's, open = `cad-desktop.exe "%1"`) and keeps the previous class in a `Solidus.Part_backup` value,
+; which APP_UNASSOCIATE puts back but never deletes. After an actual uninstallation, the extension key is left
+; empty when nothing was associated before, and then removed.
+!macro SOLIDUS_ASSOC_CLEAN EXT CLASS
+  ReadRegStr $R0 HKCU "Software\Classes\.${EXT}" "${CLASS}_backup"
+  ${If} $R0 == ""
+    DeleteRegValue HKCU "Software\Classes\.${EXT}" ""
+  ${EndIf}
+  DeleteRegValue HKCU "Software\Classes\.${EXT}" "${CLASS}_backup"
+  DeleteRegKey /ifempty HKCU "Software\Classes\.${EXT}\ShellEx"
+  DeleteRegKey /ifempty HKCU "Software\Classes\.${EXT}"
+!macroend
+
 !macro SOLIDUS_THUMB_MOVE_ASIDE
   Delete "$INSTDIR\solidus_thumbnail.dll.old"
   ${If} ${FileExists} "$INSTDIR\solidus_thumbnail.dll"
@@ -40,9 +54,9 @@
     WriteRegStr HKCU "Software\Classes\.vpart\${SOLIDUS_THUMB_SHELLEX}" "" "${SOLIDUS_THUMB_CLSID}"
     WriteRegStr HKCU "Software\Classes\.vasm\${SOLIDUS_THUMB_SHELLEX}" "" "${SOLIDUS_THUMB_CLSID}"
     SetRegView lastused
-    ; Explorer reads the associations again (SHCNE_ASSOCCHANGED).
-    System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
   ${EndIf}
+  ; Explorer reads the associations and the thumbnail handler again (SHCNE_ASSOCCHANGED).
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
@@ -56,10 +70,9 @@
     DeleteRegKey HKCU "Software\Classes\CLSID\${SOLIDUS_THUMB_CLSID}"
     DeleteRegKey HKCU "Software\Classes\.vpart\${SOLIDUS_THUMB_SHELLEX}"
     DeleteRegKey HKCU "Software\Classes\.vasm\${SOLIDUS_THUMB_SHELLEX}"
-    DeleteRegKey /ifempty HKCU "Software\Classes\.vpart\ShellEx"
-    DeleteRegKey /ifempty HKCU "Software\Classes\.vasm\ShellEx"
-    DeleteRegKey /ifempty HKCU "Software\Classes\.vpart"
-    DeleteRegKey /ifempty HKCU "Software\Classes\.vasm"
+    !insertmacro SOLIDUS_ASSOC_CLEAN "vpart" "Solidus.Part"
+    !insertmacro SOLIDUS_ASSOC_CLEAN "vasm" "Solidus.Assembly"
+    !insertmacro SOLIDUS_ASSOC_CLEAN "vdrw" "Solidus.Drawing"
     SetRegView lastused
     Delete /REBOOTOK "$INSTDIR\solidus_thumbnail.dll.old"
     System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'

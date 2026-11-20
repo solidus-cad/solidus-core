@@ -131,12 +131,18 @@ const soonTab =(id: string, label: () => string, order: number, present: () => b
   active: () => false,
   title: () => t("plg.soon"),
 });
+const SURFACE_LABEL = {
+  fr: "Surfaces", en: "Surfaces", de: "Flächen", es: "Superficies", it: "Superfici", pt: "Superfícies", pl: "Powierzchnie",
+  ru: "Поверхности", cs: "Plochy", tr: "Yüzeyler", zh: "曲面", "zh-TW": "曲面", ja: "サーフェス", ko: "서피스", ar: "الأسطح",
+};
+// Grouped at the end of the ribbon (orders 1000+, after every real tab), after a separator (styles.css).
 fixedTabs.push(
-  soonTab("cam", () => t("bench.cam"), 50, () => !!tabRegistry.get("cam")),
-  soonTab("quote", () => tx(QUOTE_LABEL), 60, () => !!tabRegistry.get("quote")),
-  soonTab("mesh", () => tx(MESH_LABEL), 100, () => !!tabRegistry.get("bench:mesh")),
+  soonTab("surface", () => tx(SURFACE_LABEL), 1000, () => !!tabRegistry.get("bench:surface")),
+  soonTab("cam", () => t("bench.cam"), 1001, () => !!tabRegistry.get("cam")),
+  soonTab("quote", () => tx(QUOTE_LABEL), 1002, () => !!tabRegistry.get("quote")),
+  soonTab("mesh", () => tx(MESH_LABEL), 1003, () => !!tabRegistry.get("bench:mesh")),
   // The PLM module has no ribbon tab of its own (tool + right pane): the announced tab gives way to its tool.
-  soonTab("plm", () => "PLM", 101, () => !!toolRegistry.get("plm")),
+  soonTab("plm", () => "PLM", 1004, () => !!toolRegistry.get("plm")),
 );
 
 tabRegistry.add(...fixedTabs, ...benchRegistry.list().map(benchTab));

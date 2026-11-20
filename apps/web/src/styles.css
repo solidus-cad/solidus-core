@@ -724,6 +724,22 @@ kbd {
   cursor: default;
 }
 
+/* Announced tabs, grouped at the end: a short vertical rule before the first one. */
+.ribbon-tabs button:not(.soon) + button.soon {
+  position: relative;
+  margin-left: 13px;
+}
+
+.ribbon-tabs button:not(.soon) + button.soon::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 25%;
+  height: 50%;
+  border-left: 1px solid var(--text);
+  opacity: 0.6;
+}
+
 .ribbon-tabs button.active {
   background: var(--panel);
   border-bottom-color: var(--accent);
