@@ -17,16 +17,16 @@
   "dependencies": {
     "@solidus-cad/sdk": "workspace:*",
     "@solidus-cad/assembly": "workspace:*",
-    "mediabunny": "1.61.1"
+    "mediabunny": "1.66.1"
   },
   "peerDependencies": {
     "solid-js": "^1.9.17",
-    "three": "^0.186.1"
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "solid-js": "^1.9.17",
-    "three": "^0.186.1",
-    "@playwright/test": "^1.64.1",
+    "three": "^0.187.0",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^24.0.0"
   }
 }
