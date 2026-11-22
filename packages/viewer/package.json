@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@solidus-cad/sdk": "workspace:*",
-    "three": "^0.186.1",
-    "three-mesh-bvh": "^0.9.16"
+    "three": "^0.187.0",
+    "three-mesh-bvh": "^0.9.18"
   },
   "devDependencies": {
-    "@types/three": "^0.186.0",
+    "@types/three": "^0.187.0",
     "@solidus-cad/sketch": "workspace:*"
   }
 }
